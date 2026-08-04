@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bulk OCR Studio - Client-Side Batch Optical Character Recognition & LLM Schema Pipeline</title>
+    <title>Bulk OCR Studio - Client-Side Batch OCR & LLM Pipeline Studio</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Tesseract.js CDN v5 -->
@@ -19,6 +19,13 @@
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <script>
+        // Suppress noisy PDF.js font warnings in console
+        const _origConsoleWarn = console.warn;
+        console.warn = function(...args) {
+            if (typeof args[0] === 'string' && (args[0].includes('Warning: TT:') || args[0].includes('font') || args[0].includes('glyph'))) return;
+            _origConsoleWarn.apply(console, args);
+        };
+
         tailwind.config = {
             darkMode: 'class',
             theme: {
@@ -55,6 +62,19 @@
 </head>
 <body class="h-full bg-slate-950 text-slate-100 flex flex-col font-sans antialiased overflow-hidden">
 
+    <!-- Desktop Screen Enforcement Modal (< 1024px) -->
+    <div id="desktopOnlyModal" class="fixed inset-0 bg-slate-950/95 backdrop-blur-2xl z-50 flex items-center justify-center p-6 hidden lg:hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-8 shadow-2xl text-center space-y-4 ring-1 ring-white/10">
+            <div class="w-16 h-16 rounded-3xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 mx-auto shadow-inner">
+                <i data-lucide="monitor" class="w-8 h-8"></i>
+            </div>
+            <h2 class="text-base font-bold text-white tracking-tight">Desktop / Laptop Display Required</h2>
+            <p class="text-xs text-slate-400 leading-relaxed">
+                Bulk OCR & LLM Pipeline Studio is engineered for power-user document batching, schema configuration, and low-confidence review on desktop and laptop screens. Please switch to a larger display.
+            </p>
+        </div>
+    </div>
+
     <!-- Top Navigation -->
     <header class="bg-slate-900 border-b border-slate-800 px-6 py-4 flex items-center justify-between shrink-0 shadow-xl">
         <div class="flex items-center space-x-3">
@@ -63,32 +83,35 @@
             </div>
             <div>
                 <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
-                    Bulk OCR & LLM Pipeline Studio 
-                    <span class="text-[10px] tracking-wide uppercase bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-2 py-0.5 rounded-full font-semibold">100% Client-Side</span>
-                    <span class="text-[10px] tracking-wide bg-slate-800 text-slate-300 border border-slate-700 px-2 py-0.5 rounded-full font-mono">v1.5.0</span>
+                    Bulk OCR & LLM Studio 
+                    <!-- Pill / Badge Styling (Distinct from buttons) -->
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold tracking-wider uppercase bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">100% Client-Side</span>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-mono font-medium bg-slate-800 text-slate-300 border border-slate-700">v1.6.0</span>
                 </h1>
-                <p class="text-xs text-slate-400">Extract, parse, and validate documents with custom prompts & validated JSON Schemas for downstream LLMs</p>
+                <p class="text-xs text-slate-400">Extract, parse, validate schemas, and review low-confidence words for downstream LLMs</p>
             </div>
         </div>
-        <div class="flex items-center space-x-3">
-            <button id="schemaConfigBtn" onclick="toggleModal('schemaConfigModal', true)" class="flex items-center space-x-1.5 px-3.5 py-1.5 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 text-xs font-semibold rounded-xl transition-all border border-indigo-500/30 hover:border-indigo-500/50 cursor-pointer shadow-sm">
+        
+        <!-- Grouped Action Toolbar (Buttons) -->
+        <div class="flex items-center space-x-2.5">
+            <button id="schemaConfigBtn" onclick="toggleModal('schemaConfigModal', true)" class="inline-flex items-center justify-center space-x-2 px-4 py-2.5 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 text-xs font-semibold rounded-xl transition-all border border-indigo-500/40 hover:border-indigo-500 cursor-pointer shadow-sm">
                 <i data-lucide="file-code" class="w-4 h-4 text-indigo-400"></i>
                 <span>LLM Schema & Prompt</span>
             </button>
-            <button id="loadSavedBatchBtn" onclick="loadBatchFromDB()" class="flex items-center space-x-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-750 text-slate-200 text-xs font-medium rounded-xl transition-all border border-slate-700 hover:border-emerald-500/40 cursor-pointer shadow-sm">
+            <button id="loadSavedBatchBtn" onclick="loadBatchFromDB()" class="inline-flex items-center justify-center space-x-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-750 text-slate-200 text-xs font-semibold rounded-xl transition-all border border-slate-700 hover:border-emerald-500/40 cursor-pointer shadow-sm">
                 <i data-lucide="database" class="w-4 h-4 text-emerald-400"></i>
                 <span>Load DB (<span id="dbCountBadge">0</span>)</span>
             </button>
-            <button id="previewJsoncModalBtn" onclick="openJsoncPreviewModal()" disabled class="flex items-center space-x-1.5 px-3.5 py-1.5 bg-slate-800 hover:bg-slate-750 disabled:bg-slate-900 disabled:text-slate-600 text-amber-300 text-xs font-medium rounded-xl transition-all border border-slate-700 hover:border-amber-500/40 cursor-pointer shadow-sm disabled:cursor-not-allowed">
+            <button id="previewJsoncModalBtn" onclick="openJsoncPreviewModal()" disabled class="inline-flex items-center justify-center space-x-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-750 disabled:bg-slate-900 disabled:text-slate-600 text-amber-300 text-xs font-semibold rounded-xl transition-all border border-slate-700 hover:border-amber-500/40 cursor-pointer shadow-sm disabled:cursor-not-allowed">
                 <i data-lucide="code-2" class="w-4 h-4"></i>
                 <span>Preview JSONC</span>
             </button>
-            <button id="helpBtn" onclick="toggleModal('helpModal', true)" class="flex items-center space-x-1.5 px-3.5 py-1.5 bg-slate-800 hover:bg-slate-750 text-slate-200 text-xs font-medium rounded-xl transition-all border border-slate-700 hover:border-slate-600 cursor-pointer shadow-sm">
+            <button id="helpBtn" onclick="toggleModal('helpModal', true)" class="inline-flex items-center justify-center space-x-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-750 text-slate-200 text-xs font-semibold rounded-xl transition-all border border-slate-700 hover:border-slate-600 cursor-pointer shadow-sm">
                 <i data-lucide="help-circle" class="w-4 h-4 text-indigo-400"></i>
                 <span>Guide</span>
             </button>
-            <div class="h-5 w-px bg-slate-800"></div>
-            <div class="text-xs text-slate-300 flex items-center gap-2 bg-slate-950/80 px-3.5 py-1.5 rounded-xl border border-slate-800 shadow-inner">
+            <div class="h-5 w-px bg-slate-800 mx-1"></div>
+            <div class="text-xs text-slate-300 flex items-center gap-2 bg-slate-950/80 px-3.5 py-2 rounded-xl border border-slate-800 shadow-inner">
                 <span id="engineStatusIndicator" class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                 <span id="engineStatusText" class="font-medium">Ready</span>
             </div>
@@ -106,12 +129,12 @@
                 <h2 class="text-[11px] font-bold uppercase tracking-wider text-slate-400">1. Select Input Source</h2>
                 
                 <div class="grid grid-cols-2 gap-2">
-                    <button onclick="document.getElementById('folderInput').click()" class="flex flex-col items-center justify-center p-3.5 bg-slate-850 hover:bg-slate-800 border border-slate-700/80 hover:border-indigo-500/50 rounded-2xl transition-all group text-center cursor-pointer shadow-sm">
+                    <button onclick="document.getElementById('folderInput').click()" class="inline-flex flex-col items-center justify-center p-3.5 bg-slate-850 hover:bg-slate-800 border border-slate-700/80 hover:border-indigo-500/50 rounded-2xl transition-all group text-center cursor-pointer shadow-sm">
                         <i data-lucide="folder-open" class="w-5 h-5 text-indigo-400 mb-1.5 group-hover:scale-110 transition-transform"></i>
                         <span class="text-xs font-semibold text-slate-200">Select Folder</span>
                         <span class="text-[10px] text-slate-400 mt-0.5">All Supported Files</span>
                     </button>
-                    <button onclick="document.getElementById('fileInput').click()" class="flex flex-col items-center justify-center p-3.5 bg-slate-850 hover:bg-slate-800 border border-slate-700/80 hover:border-indigo-500/50 rounded-2xl transition-all group text-center cursor-pointer">
+                    <button onclick="document.getElementById('fileInput').click()" class="inline-flex flex-col items-center justify-center p-3.5 bg-slate-850 hover:bg-slate-800 border border-slate-700/80 hover:border-indigo-500/50 rounded-2xl transition-all group text-center cursor-pointer">
                         <i data-lucide="files" class="w-5 h-5 text-indigo-400 mb-1.5 group-hover:scale-110 transition-transform"></i>
                         <span class="text-xs font-semibold text-slate-200">Select Files</span>
                         <span class="text-[10px] text-slate-400 mt-0.5">Multiple formats</span>
@@ -159,11 +182,11 @@
                 </div>
 
                 <div class="grid grid-cols-2 gap-2 pt-1">
-                    <button id="startBtn" onclick="startBatchOCR()" disabled class="flex items-center justify-center space-x-1.5 py-2.5 px-3 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 disabled:text-slate-600 text-white font-semibold text-xs rounded-xl transition-all shadow-md shadow-indigo-600/20 cursor-pointer disabled:cursor-not-allowed">
+                    <button id="startBtn" onclick="startBatchOCR()" disabled class="inline-flex items-center justify-center space-x-1.5 py-2.5 px-3 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 disabled:text-slate-600 text-white font-semibold text-xs rounded-xl transition-all shadow-md shadow-indigo-600/20 cursor-pointer disabled:cursor-not-allowed">
                         <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i>
                         <span id="startBtnText">Process Queue</span>
                     </button>
-                    <button id="pauseBtn" onclick="pauseBatchOCR()" disabled class="flex items-center justify-center space-x-1.5 py-2.5 px-3 bg-slate-800 hover:bg-slate-750 disabled:bg-slate-850 disabled:text-slate-600 text-slate-200 font-semibold text-xs rounded-xl transition-colors border border-slate-700 cursor-pointer disabled:cursor-not-allowed shadow-sm">
+                    <button id="pauseBtn" onclick="pauseBatchOCR()" disabled class="inline-flex items-center justify-center space-x-1.5 py-2.5 px-3 bg-slate-800 hover:bg-slate-750 disabled:bg-slate-850 disabled:text-slate-600 text-slate-200 font-semibold text-xs rounded-xl transition-colors border border-slate-700 cursor-pointer disabled:cursor-not-allowed shadow-sm">
                         <i data-lucide="pause" class="w-3.5 h-3.5"></i>
                         <span>Pause</span>
                     </button>
@@ -174,9 +197,10 @@
             <div class="px-4 py-3 bg-slate-850 flex items-center justify-between border-b border-slate-800">
                 <div class="flex items-center space-x-2">
                     <h2 class="text-[11px] font-bold uppercase tracking-wider text-slate-300">Queue Items</h2>
-                    <span id="fileCountBadge" class="bg-indigo-500/20 text-indigo-300 text-[10px] px-2 py-0.5 rounded-full font-bold">0 items</span>
+                    <!-- Badge Styling -->
+                    <span id="fileCountBadge" class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/20 text-indigo-300">0 items</span>
                 </div>
-                <button onclick="clearQueue()" class="text-slate-400 hover:text-red-400 text-xs transition-colors flex items-center gap-1 cursor-pointer font-medium">
+                <button onclick="clearQueue()" class="inline-flex items-center justify-center space-x-1 text-slate-400 hover:text-red-400 text-xs transition-colors cursor-pointer font-medium px-2 py-1 rounded-lg hover:bg-slate-800">
                     <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                     <span>Clear</span>
                 </button>
@@ -224,7 +248,7 @@
                         <div id="progressBarFill" class="bg-gradient-to-r from-indigo-500 to-violet-500 h-full rounded-full transition-all duration-300" style="width: 0%"></div>
                     </div>
                 </div>
-                <button onclick="stopBatchOCR()" class="px-3.5 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded-xl text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer shadow-sm">
+                <button onclick="stopBatchOCR()" class="inline-flex items-center justify-center space-x-1.5 px-3.5 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded-xl text-xs font-semibold transition-colors cursor-pointer shadow-sm">
                     <i data-lucide="square" class="w-3.5 h-3.5 fill-current"></i>
                     <span>Stop</span>
                 </button>
@@ -236,27 +260,29 @@
                     <div class="relative flex items-center">
                         <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"></i>
                         <input type="text" id="searchInput" oninput="filterResults()" placeholder="Search text (RegEx supported)..." class="bg-slate-950 border border-slate-750 rounded-xl pl-9 pr-20 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 w-80 shadow-inner transition-colors">
-                        <button onclick="toggleRegexMode()" id="regexToggleBtn" title="Toggle Regular Expression Search" class="absolute right-2 px-2 py-1 bg-slate-800 hover:bg-slate-750 text-slate-400 hover:text-indigo-300 text-[10px] font-mono rounded-lg border border-slate-700 transition-all cursor-pointer">
+                        <button onclick="toggleRegexMode()" id="regexToggleBtn" title="Toggle Regular Expression Search" class="absolute right-2 inline-flex items-center justify-center px-2 py-1 bg-slate-800 hover:bg-slate-750 text-slate-400 hover:text-indigo-300 text-[10px] font-mono rounded-lg border border-slate-700 transition-all cursor-pointer">
                             .* RegEx
                         </button>
                     </div>
-                    <span id="resultsCount" class="text-xs font-medium text-slate-400">Showing 0 results</span>
+                    <!-- Pill Styling -->
+                    <span id="resultsCount" class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-slate-800/80 text-slate-300 border border-slate-700">Showing 0 results</span>
                 </div>
                 
+                <!-- Grouped Export Action Buttons -->
                 <div class="flex items-center space-x-2">
-                    <button onclick="exportAllAsZip()" id="exportZipBtn" disabled class="flex items-center space-x-1 px-3 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-900 disabled:text-slate-600 text-white text-xs font-semibold rounded-xl transition-all shadow-sm cursor-pointer disabled:cursor-not-allowed">
+                    <button onclick="exportAllAsZip()" id="exportZipBtn" disabled class="inline-flex items-center justify-center space-x-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-900 disabled:text-slate-600 text-white text-xs font-semibold rounded-xl transition-all shadow-sm cursor-pointer disabled:cursor-not-allowed">
                         <i data-lucide="file-archive" class="w-4 h-4"></i>
                         <span>ZIP</span>
                     </button>
-                    <button onclick="exportAllAsSingleTxt()" id="exportTxtBtn" disabled class="flex items-center space-x-1 px-3 py-2 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-950 disabled:text-slate-600 text-slate-200 text-xs font-semibold rounded-xl transition-colors border border-slate-750 cursor-pointer disabled:cursor-not-allowed shadow-sm">
+                    <button onclick="exportAllAsSingleTxt()" id="exportTxtBtn" disabled class="inline-flex items-center justify-center space-x-1.5 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-950 disabled:text-slate-600 text-slate-200 text-xs font-semibold rounded-xl transition-colors border border-slate-750 cursor-pointer disabled:cursor-not-allowed shadow-sm">
                         <i data-lucide="file-text" class="w-4 h-4 text-indigo-400"></i>
                         <span>TXT</span>
                     </button>
-                    <button onclick="exportAsJson()" id="exportJsonBtn" disabled class="flex items-center space-x-1 px-3 py-2 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-950 disabled:text-slate-600 text-slate-200 text-xs font-semibold rounded-xl transition-colors border border-slate-750 cursor-pointer disabled:cursor-not-allowed shadow-sm">
+                    <button onclick="exportAsJson()" id="exportJsonBtn" disabled class="inline-flex items-center justify-center space-x-1.5 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-950 disabled:text-slate-600 text-slate-200 text-xs font-semibold rounded-xl transition-colors border border-slate-750 cursor-pointer disabled:cursor-not-allowed shadow-sm">
                         <i data-lucide="code" class="w-4 h-4 text-emerald-400"></i>
                         <span>JSON</span>
                     </button>
-                    <button onclick="exportAsJsonc()" id="exportJsoncBtn" disabled class="flex items-center space-x-1 px-3 py-2 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-950 disabled:text-slate-600 text-slate-200 text-xs font-semibold rounded-xl transition-colors border border-slate-750 cursor-pointer disabled:cursor-not-allowed shadow-sm">
+                    <button onclick="exportAsJsonc()" id="exportJsoncBtn" disabled class="inline-flex items-center justify-center space-x-1.5 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-950 disabled:text-slate-600 text-slate-200 text-xs font-semibold rounded-xl transition-colors border border-slate-750 cursor-pointer disabled:cursor-not-allowed shadow-sm">
                         <i data-lucide="message-square-code" class="w-4 h-4 text-amber-400"></i>
                         <span>JSONC</span>
                     </button>
@@ -286,7 +312,7 @@
                             <i data-lucide="eye" class="w-4 h-4 text-indigo-400"></i>
                             <span id="inspectorTitle">Document Inspector</span>
                         </h3>
-                        <button onclick="closeInspector()" class="text-slate-400 hover:text-slate-200 p-1 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer">
+                        <button onclick="closeInspector()" class="inline-flex items-center justify-center text-slate-400 hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer">
                             <i data-lucide="x" class="w-4 h-4"></i>
                         </button>
                     </div>
@@ -302,6 +328,14 @@
                             <div class="absolute bottom-3 right-3 bg-slate-900/90 backdrop-blur-md px-2.5 py-1 rounded-xl text-[10px] text-slate-300 font-mono border border-slate-700 shadow" id="inspectorMetaSize"></div>
                         </div>
 
+                        <!-- Low-Confidence Review Button Bar -->
+                        <div id="inspectorReviewTrigger" class="hidden">
+                            <button onclick="openLowConfWizardForActiveItem()" class="w-full inline-flex items-center justify-center space-x-2 py-2.5 px-4 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 text-xs font-semibold rounded-xl border border-amber-500/30 transition-all cursor-pointer shadow-sm">
+                                <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-400"></i>
+                                <span id="inspectorReviewBtnText">Review Low-Confidence Words (< 75%)</span>
+                            </button>
+                        </div>
+
                         <!-- Extracted Text Area -->
                         <div class="space-y-2 flex flex-col flex-1">
                             <div class="flex items-center justify-between">
@@ -310,17 +344,17 @@
                                     <span>Extracted / Parsed Content</span>
                                 </label>
                                 <div class="flex items-center space-x-2">
-                                    <button onclick="copyInspectorText()" class="text-[11px] font-medium text-indigo-400 hover:text-indigo-300 flex items-center gap-1 bg-indigo-500/10 hover:bg-indigo-500/20 px-2.5 py-1 rounded-xl border border-indigo-500/20 transition-all cursor-pointer shadow-sm">
+                                    <button onclick="copyInspectorText()" class="inline-flex items-center justify-center text-[11px] font-medium text-indigo-400 hover:text-indigo-300 space-x-1 bg-indigo-500/10 hover:bg-indigo-500/20 px-2.5 py-1 rounded-xl border border-indigo-500/20 transition-all cursor-pointer shadow-sm">
                                         <i data-lucide="copy" class="w-3 h-3"></i>
                                         <span>Copy</span>
                                     </button>
-                                    <button onclick="downloadSingleTxt()" class="text-[11px] font-medium text-slate-300 hover:text-slate-100 flex items-center gap-1 bg-slate-800 hover:bg-slate-750 px-2.5 py-1 rounded-xl border border-slate-700 transition-all cursor-pointer shadow-sm">
+                                    <button onclick="downloadSingleTxt()" class="inline-flex items-center justify-center text-[11px] font-medium text-slate-300 hover:text-slate-100 space-x-1 bg-slate-800 hover:bg-slate-750 px-2.5 py-1 rounded-xl border border-slate-700 transition-all cursor-pointer shadow-sm">
                                         <i data-lucide="download" class="w-3 h-3 text-indigo-400"></i>
                                         <span>Save TXT</span>
                                     </button>
                                 </div>
                             </div>
-                            <textarea id="inspectorTextarea" oninput="updateInspectorText(this.value)" class="w-full h-72 bg-slate-950 border border-slate-800 rounded-2xl p-3.5 text-xs text-slate-200 font-mono focus:outline-none focus:border-indigo-500 resize-none shadow-inner leading-relaxed"></textarea>
+                            <textarea id="inspectorTextarea" oninput="updateInspectorText(this.value)" class="w-full h-60 bg-slate-950 border border-slate-800 rounded-2xl p-3.5 text-xs text-slate-200 font-mono focus:outline-none focus:border-indigo-500 resize-none shadow-inner leading-relaxed"></textarea>
                         </div>
                     </div>
                 </div>
@@ -328,6 +362,55 @@
             </div>
 
         </main>
+    </div>
+
+    <!-- Low-Confidence Word Review Wizard Modal (Adobe Acrobat style) -->
+    <div id="lowConfModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-7 shadow-2xl space-y-5 ring-1 ring-white/15 flex flex-col">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-4 shrink-0">
+                <h3 class="text-base font-bold text-white flex items-center gap-2.5">
+                    <div class="p-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400">
+                        <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+                    </div>
+                    <span>Low-Confidence Word Review Wizard</span>
+                </h3>
+                <button onclick="closeLowConfWizard()" class="inline-flex items-center justify-center text-slate-400 hover:text-slate-200 p-1.5 rounded-xl hover:bg-slate-800 cursor-pointer">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-4 text-xs text-slate-300">
+                <div class="flex items-center justify-between bg-slate-950 border border-slate-800 px-4 py-2.5 rounded-2xl">
+                    <span id="lowConfItemName" class="font-semibold text-slate-200 truncate">Document.png</span>
+                    <span id="lowConfCounter" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono bg-amber-500/20 text-amber-300">Word 1 of 5</span>
+                </div>
+
+                <!-- Word Context Snippet / Image Canvas crop approximation -->
+                <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 flex flex-col items-center justify-center space-y-3 shadow-inner">
+                    <div class="text-[11px] text-slate-400 uppercase tracking-wider font-semibold">Flagged Word Confidence</div>
+                    <div class="flex items-center space-x-3">
+                        <span id="lowConfWordDisplay" class="text-lg font-mono font-bold text-amber-300 bg-slate-900 px-4 py-2 rounded-xl border border-slate-700">uncertain_word</span>
+                        <span id="lowConfScoreBadge" class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold font-mono bg-red-500/20 text-red-400 border border-red-500/30">48%</span>
+                    </div>
+                </div>
+
+                <div class="space-y-1.5">
+                    <label class="font-semibold text-slate-200">Correct / Confirm Word Value:</label>
+                    <input type="text" id="lowConfInput" class="w-full bg-slate-950 border border-slate-750 rounded-xl px-4 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-amber-500 shadow-inner">
+                </div>
+            </div>
+
+            <div class="pt-3 border-t border-slate-800 flex items-center justify-between shrink-0">
+                <button onclick="skipLowConfWord()" class="inline-flex items-center justify-center px-4 py-2.5 bg-slate-800 hover:bg-slate-750 text-slate-300 font-semibold text-xs rounded-xl transition-all border border-slate-700 cursor-pointer shadow-sm">
+                    Skip Word
+                </button>
+                <div class="flex items-center space-x-2.5">
+                    <button onclick="acceptLowConfWord()" class="inline-flex items-center justify-center px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs rounded-xl transition-all shadow-md shadow-emerald-600/20 cursor-pointer">
+                        Accept & Next
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- LLM Schema & Prompt Configurator Modal -->
@@ -340,7 +423,7 @@
                     </div>
                     LLM System Prompt & JSON Schema Studio
                 </h3>
-                <button onclick="toggleModal('schemaConfigModal', false)" class="text-slate-400 hover:text-slate-200 p-1.5 rounded-xl hover:bg-slate-800 cursor-pointer">
+                <button onclick="toggleModal('schemaConfigModal', false)" class="inline-flex items-center justify-center text-slate-400 hover:text-slate-200 p-1.5 rounded-xl hover:bg-slate-800 cursor-pointer">
                     <i data-lucide="x" class="w-4 h-4"></i>
                 </button>
             </div>
@@ -359,7 +442,7 @@
                 <div class="space-y-1.5">
                     <label class="font-semibold text-slate-200 flex items-center justify-between">
                         <span>Target JSON Schema (Draft-07 / OpenAPI compatible)</span>
-                        <span id="schemaValidationStatus" class="text-[10px] font-semibold text-emerald-400 flex items-center gap-1"><i data-lucide="check-circle" class="w-3 h-3"></i> Valid JSON Schema</span>
+                        <span id="schemaValidationStatus" class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20"><i data-lucide="check-circle" class="w-3 h-3 mr-1"></i> Valid JSON Schema</span>
                     </label>
                     <textarea id="configJsonSchema" oninput="validateJsonSchemaInput(this.value)" class="w-full h-40 bg-slate-950 border border-slate-800 rounded-2xl p-3 text-xs text-amber-300 font-mono focus:outline-none focus:border-indigo-500 resize-none shadow-inner">{
   "type": "object",
@@ -383,7 +466,7 @@
 
             <div class="pt-3 border-t border-slate-800 flex items-center justify-between shrink-0">
                 <span class="text-[11px] text-slate-400">Schemas are validated before export</span>
-                <button onclick="saveSchemaConfig()" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-xl transition-all shadow-md shadow-indigo-600/20 cursor-pointer">
+                <button onclick="saveSchemaConfig()" class="inline-flex items-center justify-center px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-xl transition-all shadow-md shadow-indigo-600/20 cursor-pointer">
                     Save & Validate
                 </button>
             </div>
@@ -398,7 +481,7 @@
                     <i data-lucide="message-square-code" class="w-5 h-5 text-amber-400"></i>
                     <span>JSONC (JSON with Comments) Preview</span>
                 </h3>
-                <button onclick="toggleModal('jsoncPreviewModal', false)" class="text-slate-400 hover:text-slate-200 p-1.5 rounded-xl hover:bg-slate-800 cursor-pointer">
+                <button onclick="toggleModal('jsoncPreviewModal', false)" class="inline-flex items-center justify-center text-slate-400 hover:text-slate-200 p-1.5 rounded-xl hover:bg-slate-800 cursor-pointer">
                     <i data-lucide="x" class="w-4 h-4"></i>
                 </button>
             </div>
@@ -409,11 +492,11 @@
             <div class="pt-3 border-t border-slate-800 flex items-center justify-between shrink-0">
                 <span class="text-[11px] text-slate-400">Ready for downstream LLM ingestion</span>
                 <div class="flex items-center space-x-3">
-                    <button onclick="copyJsoncPreview()" class="px-4 py-2 bg-slate-800 hover:bg-slate-750 text-slate-200 font-semibold text-xs rounded-xl transition-all border border-slate-700 cursor-pointer flex items-center gap-1.5 shadow-sm">
+                    <button onclick="copyJsoncPreview()" class="inline-flex items-center justify-center px-4 py-2 bg-slate-800 hover:bg-slate-750 text-slate-200 font-semibold text-xs rounded-xl transition-all border border-slate-700 cursor-pointer gap-1.5 shadow-sm">
                         <i data-lucide="copy" class="w-3.5 h-3.5"></i>
                         <span>Copy JSONC</span>
                     </button>
-                    <button onclick="exportAsJsonc()" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold text-xs rounded-xl transition-all shadow-md shadow-amber-600/20 cursor-pointer flex items-center gap-1.5">
+                    <button onclick="exportAsJsonc()" class="inline-flex items-center justify-center px-4 py-2 bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold text-xs rounded-xl transition-all shadow-md shadow-amber-600/20 cursor-pointer gap-1.5">
                         <i data-lucide="download" class="w-3.5 h-3.5"></i>
                         <span>Download .jsonc</span>
                     </button>
@@ -445,7 +528,7 @@
                     </div>
                     Bulk LLM Pipeline Studio Guide
                 </h3>
-                <button onclick="toggleModal('helpModal', false)" class="text-slate-400 hover:text-slate-200 p-1.5 rounded-xl hover:bg-slate-800 cursor-pointer">
+                <button onclick="toggleModal('helpModal', false)" class="inline-flex items-center justify-center text-slate-400 hover:text-slate-200 p-1.5 rounded-xl hover:bg-slate-800 cursor-pointer">
                     <i data-lucide="x" class="w-4 h-4"></i>
                 </button>
             </div>
@@ -453,15 +536,15 @@
                 <p class="font-semibold text-slate-200">How to use this app for Downstream LLMs & RAG:</p>
                 <div class="bg-slate-950 border border-slate-800 p-4 rounded-2xl space-y-2">
                     <ul class="list-disc pl-4 space-y-1.5 text-slate-400">
-                        <li><strong>Drag & Drop & Folder Picker:</strong> Fully supports dropping files, folders, or selecting directories with robust file traversal.</li>
-                        <li><strong>Live DB Status & Call-to-Action:</strong> When you load saved items from IndexedDB, a distinct visual notification banner and queue update prompt you for next actions.</li>
-                        <li><strong>RegEx Search:</strong> Toggle the `.* RegEx` button in the search bar to query your extracted document text using regular expressions.</li>
-                        <li><strong>LLM Schema Validation:</strong> The app validates your JSON Schema in real-time, ensuring downstream LLMs receive pristine data structures.</li>
+                        <li><strong>Consistent Output Naming:</strong> All ZIP, TXT, JSON, and JSONC exports automatically follow the format `batch-yyyy-mm-dd_hh-mm[am/pm]` based on system time.</li>
+                        <li><strong>Low-Confidence Review Wizard:</strong> Automatically isolates words with confidence &lt; 75%, letting you review and correct them word-by-word like Adobe Acrobat.</li>
+                        <li><strong>RegEx Search:</strong> Toggle the `.* RegEx` button in the search bar to query extracted text using regular expressions.</li>
+                        <li><strong>IndexedDB Persistence:</strong> Work survives page refreshes and never freezes your browser.</li>
                     </ul>
                 </div>
             </div>
             <div class="pt-3 border-t border-slate-800 flex justify-end">
-                <button onclick="toggleModal('helpModal', false)" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-xl transition-all shadow-md shadow-indigo-600/20 cursor-pointer">
+                <button onclick="toggleModal('helpModal', false)" class="inline-flex items-center justify-center px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-xl transition-all shadow-md shadow-indigo-600/20 cursor-pointer">
                     Got it, let's start
                 </button>
             </div>
@@ -498,6 +581,11 @@
         let timerInterval = null;
         let isRegexSearchEnabled = false;
 
+        // Low-Confidence Review Wizard State
+        let activeLowConfWords = [];
+        let currentLowConfIndex = 0;
+        let activeLowConfItemId = null;
+
         // Initialize Lucide icons and DB count on load
         document.addEventListener('DOMContentLoaded', async () => {
             refreshIcons();
@@ -520,6 +608,21 @@
                     lucide.createIcons();
                 } catch(e) {}
             }
+        }
+
+        // Consistent Timestamp Nominator: batch-yyyy-mm-dd_hh-mm[pm|am]
+        function getFormattedTimestamp() {
+            const now = new Date();
+            const yyyy = now.getFullYear();
+            const mm = String(now.getMonth() + 1).padStart(2, '0');
+            const dd = String(now.getDate()).padStart(2, '0');
+            let hours = now.getHours();
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const ampm = hours >= 12 ? 'pm' : 'am';
+            hours = hours % 12;
+            hours = hours ? hours : 12;
+            const hh = String(hours).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd}_${hh}-${minutes}${ampm}`;
         }
 
         // Token Estimator
@@ -680,6 +783,7 @@
                                         status: 'pending',
                                         progress: 0,
                                         text: '',
+                                        lowConfidenceWords: [],
                                         error: null,
                                         previewUrl
                                     };
@@ -692,6 +796,7 @@
                                         type: itemData.type,
                                         status: 'pending',
                                         text: '',
+                                        lowConfidenceWords: [],
                                         blob: pageFile
                                     });
 
@@ -737,6 +842,7 @@
                                 status: 'completed',
                                 progress: 1,
                                 text: combinedText.trim(),
+                                lowConfidenceWords: [],
                                 error: null,
                                 previewUrl
                             };
@@ -749,6 +855,7 @@
                                 type: itemData.type,
                                 status: 'completed',
                                 text: itemData.text,
+                                lowConfidenceWords: [],
                                 blob: thumbFile
                             });
 
@@ -784,6 +891,7 @@
                                 status: 'completed',
                                 progress: 1,
                                 text: textContent.trim(),
+                                lowConfidenceWords: [],
                                 error: null,
                                 previewUrl
                             };
@@ -796,6 +904,7 @@
                                 type: itemData.type,
                                 status: 'completed',
                                 text: itemData.text,
+                                lowConfidenceWords: [],
                                 blob: thumbFile
                             });
 
@@ -821,6 +930,7 @@
                                 status: 'pending',
                                 progress: 0,
                                 text: '',
+                                lowConfidenceWords: [],
                                 error: null,
                                 previewUrl
                             };
@@ -833,6 +943,7 @@
                                 type: itemData.type,
                                 status: 'pending',
                                 text: '',
+                                lowConfidenceWords: [],
                                 blob: file
                             });
 
@@ -878,6 +989,7 @@
                         status: p.status || 'pending',
                         progress: p.status === 'completed' ? 1 : 0,
                         text: p.text || '',
+                        lowConfidenceWords: p.lowConfidenceWords || [],
                         error: null,
                         previewUrl
                     };
@@ -913,19 +1025,24 @@
         function showDbLoadedBanner(total, completed) {
             const container = document.getElementById('resultsContainer');
             const bannerHtml = `
-                <div id="dbLoadedBanner" class="col-span-full bg-gradient-to-r from-emerald-950/80 to-slate-900 border border-emerald-500/40 rounded-3xl p-5 mb-2 flex items-center justify-between shadow-lg">
+                <div id="dbLoadedBanner" class="col-span-full bg-gradient-to-r from-emerald-950/90 to-slate-900 border border-emerald-500/40 rounded-3xl p-5 mb-2 flex items-center justify-between shadow-xl ring-1 ring-emerald-500/20">
                     <div class="flex items-center space-x-3.5">
                         <div class="p-3 bg-emerald-500/20 border border-emerald-500/30 rounded-2xl text-emerald-400">
                             <i data-lucide="database" class="w-6 h-6"></i>
                         </div>
                         <div>
-                            <h4 class="text-sm font-bold text-white">IndexedDB Session Restored Successfully!</h4>
-                            <p class="text-xs text-emerald-300/90 mt-0.5">Loaded <strong>${total} items</strong> (${completed} completed). You can inspect contents, resume pending OCR, or preview/export JSONC immediately.</p>
+                            <h4 class="text-sm font-bold text-white tracking-tight">IndexedDB Session Restored Successfully!</h4>
+                            <p class="text-xs text-emerald-300/90 mt-0.5">Loaded <strong>${total} items</strong> (${completed} completed). You can inspect contents, review low-confidence words, or preview/export JSONC immediately.</p>
                         </div>
                     </div>
-                    <button onclick="document.getElementById('dbLoadedBanner').remove()" class="text-slate-400 hover:text-slate-200 p-1.5 rounded-xl hover:bg-slate-800 cursor-pointer">
-                        <i data-lucide="x" class="w-4 h-4"></i>
-                    </button>
+                    <div class="flex items-center space-x-3">
+                        <button onclick="openJsoncPreviewModal()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold text-xs rounded-xl transition-all shadow-md cursor-pointer">
+                            Preview JSONC
+                        </button>
+                        <button onclick="document.getElementById('dbLoadedBanner').remove()" class="text-slate-400 hover:text-slate-200 p-1.5 rounded-xl hover:bg-slate-800 cursor-pointer">
+                            <i data-lucide="x" class="w-4 h-4"></i>
+                        </button>
+                    </div>
                 </div>
             `;
             container.insertAdjacentHTML('afterbegin', bannerHtml);
@@ -980,10 +1097,10 @@
             let html = '';
             fileQueue.forEach(item => {
                 let statusBadge = '';
-                if (item.status === 'pending') statusBadge = '<span class="text-[10px] text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded-md font-medium">Pending</span>';
-                else if (item.status === 'processing') statusBadge = '<span class="text-[10px] text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded-md animate-pulse font-semibold">OCR ' + Math.round(item.progress * 100) + '%</span>';
-                else if (item.status === 'completed') statusBadge = '<span class="text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-md font-semibold">Done</span>';
-                else if (item.status === 'error') statusBadge = '<span class="text-[10px] text-red-400 bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded-md font-semibold">Error</span>';
+                if (item.status === 'pending') statusBadge = '<span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium text-slate-400 bg-slate-800/80">Pending</span>';
+                else if (item.status === 'processing') statusBadge = '<span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 animate-pulse">OCR ' + Math.round(item.progress * 100) + '%</span>';
+                else if (item.status === 'completed') statusBadge = '<span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20">Done</span>';
+                else if (item.status === 'error') statusBadge = '<span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold text-red-400 bg-red-500/10 border border-red-500/20">Error</span>';
 
                 html += `
                     <div onclick="inspectFile('${item.id}')" class="p-3 rounded-2xl hover:bg-slate-850 cursor-pointer transition-all flex items-center space-x-3 group ${activeInspectorId === item.id ? 'bg-slate-850 border border-indigo-500/50 shadow-md' : 'border border-transparent'}">
@@ -1013,7 +1130,7 @@
             return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
         }
 
-        // Robust Batch OCR & Parser Engine with IndexedDB Auto-Update & ETA Estimator
+        // Robust Batch OCR & Parser Engine with IndexedDB Auto-Update & Confidence Extraction
         async function startBatchOCR() {
             if (isProcessing) return;
             const pendingFiles = fileQueue.filter(f => f.status === 'pending' || f.status === 'error');
@@ -1091,27 +1208,42 @@
                     document.getElementById('currentProcessingLabel').textContent = `Processing (${i+1}/${fileQueue.length}): ${item.name}`;
 
                     try {
+                        let lowConfList = [];
                         if (item.isOcrNeeded && currentWorker) {
                             const ret = await currentWorker.recognize(item.file);
                             item.text = ret && ret.data && ret.data.text ? ret.data.text.trim() : '';
+                            
+                            // Extract words with confidence < 75% for review wizard
+                            if (ret && ret.data && ret.data.words) {
+                                lowConfList = ret.data.words
+                                    .filter(w => w.confidence < 75 && w.text && w.text.trim().length > 0)
+                                    .map(w => ({
+                                        text: w.text.trim(),
+                                        confidence: Math.round(w.confidence),
+                                        bbox: w.bbox
+                                    }));
+                            }
                         }
-                        
+                        item.lowConfidenceWords = lowConfList;
                         item.status = 'completed';
                         item.progress = 1;
 
                         await db.pages.update(item.id, {
                             status: 'completed',
-                            text: item.text
+                            text: item.text,
+                            lowConfidenceWords: item.lowConfidenceWords
                         });
                     } catch (err) {
                         console.error(`Processing Error on ${item.name}:`, err);
                         item.status = 'error';
                         item.error = err.message || 'Processing Failed';
                         item.text = '[Extraction Failed: ' + item.error + ']';
+                        item.lowConfidenceWords = [];
 
                         await db.pages.update(item.id, {
                             status: 'error',
-                            text: item.text
+                            text: item.text,
+                            lowConfidenceWords: []
                         });
                     }
 
@@ -1217,14 +1349,14 @@
             const btn = document.getElementById('regexToggleBtn');
             const input = document.getElementById('searchInput');
             if (isRegexSearchEnabled) {
-                btn.className = 'absolute right-2 px-2 py-1 bg-indigo-600 text-white text-[10px] font-mono rounded-lg border border-indigo-400 transition-all cursor-pointer shadow-sm';
+                btn.className = 'absolute right-2 inline-flex items-center justify-center px-2 py-1 bg-indigo-600 text-white text-[10px] font-mono rounded-lg border border-indigo-400 transition-all cursor-pointer shadow-sm';
                 btn.title = 'RegEx Search Enabled';
                 input.placeholder = 'Search RegEx (e.g. \\d{3}-\\d{2})...';
                 showToast('RegEx search mode enabled', 'code');
             } else {
-                btn.className = 'absolute right-2 px-2 py-1 bg-slate-800 hover:bg-slate-750 text-slate-400 hover:text-indigo-300 text-[10px] font-mono rounded-lg border border-slate-700 transition-all cursor-pointer';
+                btn.className = 'absolute right-2 inline-flex items-center justify-center px-2 py-1 bg-slate-800 hover:bg-slate-750 text-slate-400 hover:text-indigo-300 text-[10px] font-mono rounded-lg border border-slate-700 transition-all cursor-pointer';
                 btn.title = 'Toggle Regular Expression Search';
-                input.placeholder = 'Search extracted text...';
+                input.placeholder = 'Search text (RegEx supported)...';
                 showToast('Standard search mode enabled', 'search');
             }
             filterResults();
@@ -1260,7 +1392,6 @@
 
             document.getElementById('resultsCount').textContent = `Showing ${filteredQueue.length} of ${fileQueue.length} items`;
 
-            // Keep banner if present
             const existingBanner = document.getElementById('dbLoadedBanner');
             let bannerOuterHtml = '';
             if (existingBanner) {
@@ -1298,12 +1429,13 @@
             let html = bannerOuterHtml;
             filteredQueue.forEach(item => {
                 let statusBadge = '';
-                if (item.status === 'pending') statusBadge = '<span class="text-[10px] text-slate-400 bg-slate-800 px-2 py-0.5 rounded-full font-medium">Pending</span>';
-                else if (item.status === 'processing') statusBadge = `<span class="text-[10px] text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-0.5 rounded-full font-semibold animate-pulse">Processing ${Math.round((item.progress || 0) * 100)}%</span>`;
-                else if (item.status === 'completed') statusBadge = '<span class="text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full font-semibold">Completed</span>';
-                else if (item.status === 'error') statusBadge = '<span class="text-[10px] text-red-400 bg-red-500/10 border border-red-500/20 px-2.5 py-0.5 rounded-full font-semibold">Error</span>';
+                if (item.status === 'pending') statusBadge = '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium text-slate-400 bg-slate-800">Pending</span>';
+                else if (item.status === 'processing') statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 animate-pulse">Processing ' + Math.round((item.progress || 0) * 100) + '%</span>';
+                else if (item.status === 'completed') statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20">Completed</span>';
+                else if (item.status === 'error') statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold text-red-400 bg-red-500/10 border border-red-500/30">Error</span>';
 
                 const displayText = item.text ? escapeHtml(item.text) : '<span class="text-slate-600 italic">No text extracted yet...</span>';
+                const lowConfCount = item.lowConfidenceWords ? item.lowConfidenceWords.length : 0;
 
                 html += `
                     <div onclick="inspectFile('${item.id}')" class="bg-slate-900 border ${activeInspectorId === item.id ? 'border-indigo-500 shadow-xl shadow-indigo-500/10 ring-1 ring-indigo-500/30' : 'border-slate-800 hover:border-slate-700'} rounded-3xl p-5 flex flex-col transition-all cursor-pointer group shadow-md">
@@ -1317,7 +1449,8 @@
                                     <p class="text-[10px] text-slate-400 mt-0.5 font-mono">${formatBytes(item.size)}</p>
                                 </div>
                             </div>
-                            <div class="shrink-0">
+                            <div class="shrink-0 flex items-center space-x-2">
+                                ${lowConfCount > 0 ? '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold font-mono bg-amber-500/20 text-amber-300 border border-amber-500/30">⚠️ ' + lowConfCount + ' low-conf</span>' : ''}
                                 ${statusBadge}
                             </div>
                         </div>
@@ -1361,7 +1494,86 @@
             document.getElementById('inspectorMetaSize').textContent = `${formatBytes(item.size)}`;
             document.getElementById('inspectorTextarea').value = item.text || '';
 
+            // Show or hide low-confidence review button
+            const reviewTrigger = document.getElementById('inspectorReviewTrigger');
+            const reviewBtnText = document.getElementById('inspectorReviewBtnText');
+            if (item.lowConfidenceWords && item.lowConfidenceWords.length > 0) {
+                reviewTrigger.classList.remove('hidden');
+                reviewBtnText.textContent = `Review Low-Confidence Words (${item.lowConfidenceWords.length})`;
+            } else {
+                reviewTrigger.classList.add('hidden');
+            }
+
             updateQueueUI();
+            renderResultsGrid();
+        }
+
+        // Low-Confidence Review Wizard Functions
+        function openLowConfWizardForActiveItem() {
+            const item = fileQueue.find(f => f.id === activeInspectorId);
+            if (!item || !item.lowConfidenceWords || item.lowConfidenceWords.length === 0) {
+                showToast('No low-confidence words flagged for this item', 'info');
+                return;
+            }
+            activeLowConfItemId = item.id;
+            activeLowConfWords = item.lowConfidenceWords;
+            currentLowConfIndex = 0;
+            showCurrentLowConfWord();
+            toggleModal('lowConfModal', true);
+        }
+
+        function showCurrentLowConfWord() {
+            if (currentLowConfIndex >= activeLowConfWords.length) {
+                closeLowConfWizard();
+                showToast('All low-confidence words reviewed!', 'check-circle');
+                renderResultsGrid();
+                return;
+            }
+            const wordObj = activeLowConfWords[currentLowConfIndex];
+            document.getElementById('lowConfItemName').textContent = fileQueue.find(f => f.id === activeLowConfItemId)?.name || 'Document';
+            document.getElementById('lowConfCounter').textContent = `Word ${currentLowConfIndex + 1} of ${activeLowConfWords.length}`;
+            document.getElementById('lowConfWordDisplay').textContent = wordObj.text;
+            document.getElementById('lowConfScoreBadge').textContent = `${wordObj.confidence}%`;
+            document.getElementById('lowConfInput').value = wordObj.text;
+            document.getElementById('lowConfInput').focus();
+            document.getElementById('lowConfInput').select();
+        }
+
+        function acceptLowConfWord() {
+            const correctedVal = document.getElementById('lowConfInput').value.trim();
+            const wordObj = activeLowConfWords[currentLowConfIndex];
+            const item = fileQueue.find(f => f.id === activeLowConfItemId);
+
+            if (item && item.text) {
+                // Replace word in text (case-insensitive or exact substring replacement)
+                // For safety, replace exact instance or global if matching
+                const oldText = item.text;
+                item.text = oldText.replace(new RegExp('\\b' + wordObj.text + '\\b', 'g'), correctedVal);
+                
+                // Update inspector textarea if active
+                if (activeInspectorId === item.id) {
+                    document.getElementById('inspectorTextarea').value = item.text;
+                }
+
+                // Update IndexedDB
+                db.pages.update(item.id, { text: item.text });
+            }
+
+            currentLowConfIndex++;
+            showCurrentLowConfWord();
+            updateTokenEstimate();
+        }
+
+        function skipLowConfWord() {
+            currentLowConfIndex++;
+            showCurrentLowConfWord();
+        }
+
+        function closeLowConfWizard() {
+            toggleModal('lowConfModal', false);
+            activeLowConfWords = [];
+            currentLowConfIndex = 0;
+            activeLowConfItemId = null;
             renderResultsGrid();
         }
 
@@ -1407,7 +1619,7 @@
             showToast('Downloaded text file', 'download');
         }
 
-        // Export Functions
+        // Export Functions with Consistent Timestamp Naming: batch-yyyy-mm-dd_hh-mm[pm|am]
         async function exportAllAsZip() {
             const completedItems = fileQueue.filter(f => f.status === 'completed');
             if (completedItems.length === 0) {
@@ -1418,7 +1630,8 @@
             showLoadingSpinner('Generating ZIP Archive', 'Compressing text files into ZIP...');
             try {
                 const zip = new JSZip();
-                const folderName = 'bulk_docs_results_' + new Date().toISOString().slice(0,10);
+                const timestamp = getFormattedTimestamp();
+                const folderName = `batch-${timestamp}`;
                 const resultsFolder = zip.folder(folderName);
 
                 completedItems.forEach(item => {
@@ -1458,6 +1671,7 @@
                 return;
             }
 
+            const timestamp = getFormattedTimestamp();
             let mergedContent = `# BULK DOCUMENT STUDIO - MERGED EXPORT\n# Generated: ${new Date().toLocaleString()}\n# Total Items: ${completedItems.length}\n\n`;
             completedItems.forEach((item, idx) => {
                 mergedContent += `==================================================\n`;
@@ -1470,7 +1684,7 @@
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `bulk_docs_merged_${new Date().toISOString().slice(0,10)}.txt`;
+            a.download = `batch-${timestamp}.txt`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -1479,12 +1693,14 @@
         }
 
         function exportAsJson() {
+            const timestamp = getFormattedTimestamp();
             const data = fileQueue.map(f => ({
                 name: f.name,
                 size: f.size,
                 type: f.type,
                 status: f.status,
                 text: f.text || '',
+                lowConfidenceWords: f.lowConfidenceWords || [],
                 error: f.error || null
             }));
 
@@ -1492,7 +1708,7 @@
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `bulk_docs_data_${new Date().toISOString().slice(0,10)}.json`;
+            a.download = `batch-${timestamp}.json`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -1508,13 +1724,13 @@
                 if (typeof parsed !== 'object' || parsed === null) {
                     throw new Error('Schema must be a JSON object');
                 }
-                statusEl.className = 'text-[10px] font-semibold text-emerald-400 flex items-center gap-1';
-                statusEl.innerHTML = '<i data-lucide="check-circle" class="w-3 h-3"></i> Valid JSON Schema';
+                statusEl.className = 'inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20';
+                statusEl.innerHTML = '<i data-lucide="check-circle" class="w-3 h-3 mr-1"></i> Valid JSON Schema';
                 refreshIcons();
                 return true;
             } catch (e) {
-                statusEl.className = 'text-[10px] font-semibold text-red-400 flex items-center gap-1';
-                statusEl.innerHTML = '<i data-lucide="alert-circle" class="w-3 h-3"></i> Invalid JSON Syntax';
+                statusEl.className = 'inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold text-red-400 bg-red-500/10 border border-red-500/20';
+                statusEl.innerHTML = '<i data-lucide="alert-circle" class="w-3 h-3 mr-1"></i> Invalid JSON Syntax';
                 refreshIcons();
                 return false;
             }
@@ -1551,7 +1767,7 @@
             jsonc += `  // ====================================================================\n\n`;
             jsonc += `  "metadata": {\n`;
             jsonc += `    "app": "Bulk OCR & LLM Pipeline Studio",\n`;
-            jsonc += `    "version": "v1.5.0",\n`;
+            jsonc += `    "version": "v1.6.0",\n`;
             jsonc += `    "exportTimestamp": "${new Date().toISOString()}",\n`;
             jsonc += `    "totalItems": ${fileQueue.length},\n`;
             jsonc += `    "completedItems": ${completedItems.length}\n`;
@@ -1576,6 +1792,7 @@
                 jsonc += `      "mimeType": "${item.type}",\n`;
                 jsonc += `      "sizeBytes": ${item.size},\n`;
                 jsonc += `      "wordCount": ${wordCount},\n`;
+                jsonc += `      "lowConfidenceWordsCount": ${item.lowConfidenceWords ? item.lowConfidenceWords.length : 0},\n`;
                 jsonc += `      "extractedText": ${escapedText}\n`;
                 jsonc += `    }${idx < completedItems.length - 1 ? ',' : ''}\n`;
             });
@@ -1604,7 +1821,7 @@
             showToast('JSONC copied to clipboard', 'copy');
         }
 
-        // Export as JSONC (JSON with Comments)
+        // Export as JSONC (JSON with Comments) with consistent timestamp naming
         function exportAsJsonc() {
             const completedItems = fileQueue.filter(f => f.status === 'completed');
             if (completedItems.length === 0) {
@@ -1612,12 +1829,13 @@
                 return;
             }
 
+            const timestamp = getFormattedTimestamp();
             const jsonc = generateJsoncString();
             const blob = new Blob([jsonc], { type: 'application/json;charset=utf-8' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `llm_pipeline_data_${new Date().toISOString().slice(0,10)}.jsonc`;
+            a.download = `batch-${timestamp}.jsonc`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
