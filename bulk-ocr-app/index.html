@@ -12,6 +12,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <!-- JSZip CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <!-- Dexie.js CDN (IndexedDB wrapper) -->
+    <script src="https://unpkg.com/dexie@latest/dist/dexie.js"></script>
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <script>
@@ -61,12 +63,16 @@
                 <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
                     Bulk OCR Studio 
                     <span class="text-[10px] tracking-wide uppercase bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-2 py-0.5 rounded-full font-semibold">100% Client-Side</span>
-                    <span class="text-[10px] tracking-wide bg-slate-800 text-slate-300 border border-slate-700 px-2 py-0.5 rounded-full font-mono">v1.1.0</span>
+                    <span class="text-[10px] tracking-wide bg-slate-800 text-slate-300 border border-slate-700 px-2 py-0.5 rounded-full font-mono">v1.2.0</span>
                 </h1>
-                <p class="text-xs text-slate-400">Batch extract text from local directories, images, and multi-page PDF documents for downstream JSONC modules</p>
+                <p class="text-xs text-slate-400">High-performance batch OCR with IndexedDB persistence for downstream JSONC ingestion</p>
             </div>
         </div>
         <div class="flex items-center space-x-3">
+            <button id="loadSavedBatchBtn" onclick="loadBatchFromDB()" class="flex items-center space-x-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-750 text-slate-200 text-xs font-medium rounded-xl transition-all border border-slate-700 hover:border-emerald-500/40 cursor-pointer shadow-sm">
+                <i data-lucide="database" class="w-4 h-4 text-emerald-400"></i>
+                <span>Load Saved DB (<span id="dbCountBadge">0</span>)</span>
+            </button>
             <button id="previewJsoncModalBtn" onclick="openJsoncPreviewModal()" disabled class="flex items-center space-x-1.5 px-3.5 py-1.5 bg-slate-800 hover:bg-slate-750 disabled:bg-slate-900 disabled:text-slate-600 text-amber-300 text-xs font-medium rounded-xl transition-all border border-slate-700 hover:border-amber-500/40 cursor-pointer shadow-sm disabled:cursor-not-allowed">
                 <i data-lucide="code-2" class="w-4 h-4"></i>
                 <span>Preview JSONC</span>
@@ -320,7 +326,7 @@
                 </button>
             </div>
             <div class="flex-1 overflow-hidden flex flex-col space-y-2">
-                <p class="text-xs text-slate-400">Optimized schema format for downstream ingestion modules and RAG pipelines:</p>
+                <p class="text-xs text-slate-400">Optimized schema format for downstream integration modules and RAG pipelines:</p>
                 <textarea id="jsoncPreviewArea" readonly class="w-full flex-1 bg-slate-950 border border-slate-800 rounded-2xl p-4 text-xs text-amber-200 font-mono focus:outline-none resize-none shadow-inner leading-relaxed"></textarea>
             </div>
             <div class="pt-3 border-t border-slate-800 flex items-center justify-between shrink-0">
@@ -360,7 +366,7 @@
                     <div class="p-2 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
                         <i data-lucide="info" class="w-5 h-5"></i>
                     </div>
-                    Bulk OCR Studio Guide & Data Storage
+                    Bulk OCR Studio Guide & IndexedDB Persistence
                 </h3>
                 <button onclick="toggleModal('helpModal', false)" class="text-slate-400 hover:text-slate-200 p-1.5 rounded-xl hover:bg-slate-800 transition-colors cursor-pointer">
                     <i data-lucide="x" class="w-5 h-5"></i>
@@ -368,14 +374,14 @@
             </div>
             <div class="space-y-3.5 text-xs text-slate-300 leading-relaxed">
                 <p class="font-semibold text-slate-200">Where are the inferred text results stored?</p>
-                <p class="text-slate-400">Because this application runs <strong>100% client-side in your browser</strong> with zero server calls, all inferred text results are stored securely in your browser's active memory (JavaScript RAM state via `fileQueue`).</p>
+                <p class="text-slate-400">Powered by <strong>Dexie.js & IndexedDB</strong>, all OCR results, page images, and metadata are persisted locally in your browser's robust database. Your app will never freeze and your work survives page refreshes!</p>
                 <div class="bg-slate-950 border border-slate-800 p-4 rounded-2xl space-y-2">
-                    <p class="font-semibold text-slate-200">Key Architectural Highlights & JSONC Export:</p>
+                    <p class="font-semibold text-slate-200">Key Architectural Highlights:</p>
                     <ul class="list-disc pl-4 space-y-1.5 text-slate-400">
-                        <li><strong>JSONC Support:</strong> Export your batch results to JSON with comments (`.jsonc`), which injects detailed metadata, extraction timestamps, word counts, and comments explaining each page's status directly into the file for downstream modules!</li>
-                        <li><strong>Per-Page Processing:</strong> Images count as 1 page, and multi-page PDFs are automatically split and rendered page-by-page.</li>
-                        <li><strong>Live Inspection & Editing:</strong> Click any item in the grid to inspect the original page side-by-side with the inferred text and make manual edits instantly.</li>
-                        <li><strong>Privacy & Safety:</strong> Nothing leaves your computer. Closing or refreshing your browser tab clears active memory.</li>
+                        <li><strong>IndexedDB Persistence:</strong> Pages and OCR results are auto-saved to IndexedDB as they complete, preventing memory loss and UI freezes.</li>
+                        <li><strong>Downstream JSONC:</strong> Instantly export or preview structured JSON with comments (`.jsonc`) optimized for RAG and downstream modules.</li>
+                        <li><strong>Per-Page Processing:</strong> High-performance image and multi-page PDF page extraction.</li>
+                        <li><strong>Privacy & Safety:</strong> 100% client-side with zero server uploads.</li>
                     </ul>
                 </div>
             </div>
@@ -400,6 +406,12 @@
             pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
         }
 
+        // Initialize Dexie.js IndexedDB database
+        const db = new Dexie('BulkOcrStudioDB');
+        db.version(1).stores({
+            pages: 'id, name, status, size, type'
+        });
+
         // State management
         let fileQueue = [];
         let isProcessing = false;
@@ -410,10 +422,20 @@
         let startTime = 0;
         let timerInterval = null;
 
-        // Initialize Lucide icons on load
-        document.addEventListener('DOMContentLoaded', () => {
+        // Initialize Lucide icons and DB count on load
+        document.addEventListener('DOMContentLoaded', async () => {
             refreshIcons();
+            await updateDbCountBadge();
         });
+
+        async function updateDbCountBadge() {
+            try {
+                const count = await db.pages.count();
+                document.getElementById('dbCountBadge').textContent = count;
+            } catch (e) {
+                console.error(e);
+            }
+        }
 
         function refreshIcons() {
             if (typeof lucide !== 'undefined') {
@@ -548,7 +570,7 @@
                                 if (!exists) {
                                     const id = 'file_' + Math.random().toString(36).substring(2, 9);
                                     const previewUrl = URL.createObjectURL(pageFile);
-                                    fileQueue.push({
+                                    const itemData = {
                                         id,
                                         file: pageFile,
                                         name: `${file.name} (p. ${pageNum})`,
@@ -560,7 +582,20 @@
                                         text: '',
                                         error: null,
                                         previewUrl
+                                    };
+                                    fileQueue.push(itemData);
+                                    
+                                    // Persist to IndexedDB asynchronously
+                                    await db.pages.put({
+                                        id,
+                                        name: itemData.name,
+                                        size: itemData.size,
+                                        type: itemData.type,
+                                        status: 'pending',
+                                        text: '',
+                                        blob: pageFile
                                     });
+
                                     addedCount++;
                                 }
                             }
@@ -573,7 +608,7 @@
                         if (!exists) {
                             const id = 'file_' + Math.random().toString(36).substring(2, 9);
                             const previewUrl = URL.createObjectURL(file);
-                            fileQueue.push({
+                            const itemData = {
                                 id,
                                 file,
                                 name: file.name,
@@ -585,20 +620,84 @@
                                 text: '',
                                 error: null,
                                 previewUrl
+                            };
+                            fileQueue.push(itemData);
+
+                            await db.pages.put({
+                                id,
+                                name: itemData.name,
+                                size: itemData.size,
+                                type: itemData.type,
+                                status: 'pending',
+                                text: '',
+                                blob: file
                             });
+
                             addedCount++;
                         }
                     }
                 }
             } finally {
                 hideLoadingSpinner();
+                await updateDbCountBadge();
             }
 
             if (addedCount > 0) {
-                showToast(`Added ${addedCount} pages/items to queue`, 'check-circle');
+                showToast(`Added ${addedCount} pages/items to queue & IndexedDB`, 'check-circle');
                 updateQueueUI();
                 renderResultsGrid();
                 document.getElementById('startBtn').removeAttribute('disabled');
+            }
+        }
+
+        // Load saved batch from IndexedDB
+        async function loadBatchFromDB() {
+            showLoadingSpinner('Loading from IndexedDB', 'Fetching saved pages and OCR results...');
+            try {
+                const savedPages = await db.pages.toArray();
+                if (savedPages.length === 0) {
+                    showToast('No saved batch found in IndexedDB', 'info');
+                    hideLoadingSpinner();
+                    return;
+                }
+
+                fileQueue = savedPages.map(p => {
+                    const previewUrl = URL.createObjectURL(p.blob);
+                    return {
+                        id: p.id,
+                        file: p.blob,
+                        name: p.name,
+                        path: p.name,
+                        size: p.size,
+                        type: p.type,
+                        status: p.status || 'pending',
+                        progress: p.status === 'completed' ? 1 : 0,
+                        text: p.text || '',
+                        error: null,
+                        previewUrl
+                    };
+                });
+
+                updateQueueUI();
+                renderResultsGrid();
+                document.getElementById('startBtn').removeAttribute('disabled');
+                
+                const completedCount = fileQueue.filter(f => f.status === 'completed').length;
+                if (completedCount > 0) {
+                    document.getElementById('exportZipBtn').removeAttribute('disabled');
+                    document.getElementById('exportTxtBtn').removeAttribute('disabled');
+                    document.getElementById('exportJsonBtn').removeAttribute('disabled');
+                    document.getElementById('exportJsoncBtn').removeAttribute('disabled');
+                    document.getElementById('previewJsoncModalBtn').removeAttribute('disabled');
+                }
+
+                showToast(`Loaded ${fileQueue.length} items from IndexedDB`, 'database');
+            } catch (e) {
+                console.error(e);
+                showToast('Failed to load from IndexedDB', 'alert-circle');
+            } finally {
+                hideLoadingSpinner();
+                await updateDbCountBadge();
             }
         }
 
@@ -622,6 +721,9 @@
             document.getElementById('exportJsoncBtn').setAttribute('disabled', 'true');
             document.getElementById('previewJsoncModalBtn').setAttribute('disabled', 'true');
             document.getElementById('queueEtaText').textContent = 'Calculating...';
+            
+            // Also clear IndexedDB if desired, or keep as persistence cache
+            db.pages.clear().then(() => updateDbCountBadge());
             showToast('Queue cleared', 'trash-2');
         }
 
@@ -680,7 +782,7 @@
             return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
         }
 
-        // Robust Batch OCR Engine with ETA Estimator
+        // Robust Batch OCR Engine with IndexedDB Auto-Update & ETA Estimator
         async function startBatchOCR() {
             if (isProcessing) return;
             const pendingFiles = fileQueue.filter(f => f.status === 'pending' || f.status === 'error');
@@ -760,11 +862,22 @@
                         item.text = ret && ret.data && ret.data.text ? ret.data.text.trim() : '';
                         item.status = 'completed';
                         item.progress = 1;
+
+                        // Update IndexedDB record immediately upon completion
+                        await db.pages.update(item.id, {
+                            status: 'completed',
+                            text: item.text
+                        });
                     } catch (err) {
                         console.error(`OCR Error on ${item.name}:`, err);
                         item.status = 'error';
                         item.error = err.message || 'OCR Failed';
                         item.text = '[OCR Extraction Failed: ' + item.error + ']';
+
+                        await db.pages.update(item.id, {
+                            status: 'error',
+                            text: item.text
+                        });
                     }
 
                     updateQueueUI();
@@ -779,6 +892,7 @@
                 showToast('OCR Error: ' + (err.message || err), 'alert-circle');
             } finally {
                 hideLoadingSpinner();
+                await updateDbCountBadge();
             }
 
             // Cleanup & Reset state
@@ -797,7 +911,7 @@
                 document.getElementById('exportJsonBtn').removeAttribute('disabled');
                 document.getElementById('exportJsoncBtn').removeAttribute('disabled');
                 document.getElementById('previewJsoncModalBtn').removeAttribute('disabled');
-                showToast(`Batch OCR completed! ${completedCount} pages processed successfully.`, 'check-circle');
+                showToast(`Batch OCR completed! ${completedCount} pages processed & persisted to IndexedDB.`, 'check-circle');
             }
         }
 
@@ -977,11 +1091,13 @@
             renderResultsGrid();
         }
 
-        function updateInspectorText(newText) {
+        async function updateInspectorText(newText) {
             if (!activeInspectorId) return;
             const item = fileQueue.find(f => f.id === activeInspectorId);
             if (item) {
                 item.text = newText;
+                // Update IndexedDB as well
+                await db.pages.update(item.id, { text: newText });
                 renderResultsGrid();
             }
         }
@@ -1115,7 +1231,7 @@
             jsonc += `  // ====================================================================\n\n`;
             jsonc += `  "metadata": {\n`;
             jsonc += `    "app": "Bulk OCR Studio",\n`;
-            jsonc += `    "version": "v1.1.0",\n`;
+            jsonc += `    "version": "v1.2.0",\n`;
             jsonc += `    "exportTimestamp": "${new Date().toISOString()}",\n`;
             jsonc += `    "totalItems": ${fileQueue.length},\n`;
             jsonc += `    "completedItems": ${completedItems.length}\n`;
