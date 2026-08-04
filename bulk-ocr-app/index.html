@@ -61,7 +61,7 @@
                 <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
                     Bulk OCR Studio 
                     <span class="text-[10px] tracking-wide uppercase bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-2 py-0.5 rounded-full font-semibold">100% Client-Side</span>
-                    <span class="text-[10px] tracking-wide bg-slate-800 text-slate-300 border border-slate-700 px-2 py-0.5 rounded-full font-mono">v1.0.0</span>
+                    <span class="text-[10px] tracking-wide bg-slate-800 text-slate-300 border border-slate-700 px-2 py-0.5 rounded-full font-mono">v1.1.0</span>
                 </h1>
                 <p class="text-xs text-slate-400">Batch extract text from local directories, images, and multi-page PDF documents securely in your browser</p>
             </div>
@@ -215,23 +215,27 @@
                 <div class="flex items-center space-x-3">
                     <div class="relative">
                         <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
-                        <input type="text" id="searchInput" oninput="filterResults()" placeholder="Search extracted text..." class="bg-slate-950 border border-slate-750 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 w-72 shadow-inner transition-colors">
+                        <input type="text" id="searchInput" oninput="filterResults()" placeholder="Search extracted text..." class="bg-slate-950 border border-slate-750 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 w-64 shadow-inner transition-colors">
                     </div>
                     <span id="resultsCount" class="text-xs font-medium text-slate-400">Showing 0 results</span>
                 </div>
                 
-                <div class="flex items-center space-x-2.5">
-                    <button onclick="exportAllAsZip()" id="exportZipBtn" disabled class="flex items-center space-x-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-900 disabled:text-slate-600 text-white text-xs font-semibold rounded-xl transition-all shadow-sm cursor-pointer disabled:cursor-not-allowed">
+                <div class="flex items-center space-x-2">
+                    <button onclick="exportAllAsZip()" id="exportZipBtn" disabled class="flex items-center space-x-1 px-3 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-900 disabled:text-slate-600 text-white text-xs font-semibold rounded-xl transition-all shadow-sm cursor-pointer disabled:cursor-not-allowed">
                         <i data-lucide="file-archive" class="w-4 h-4"></i>
-                        <span>Export All (.ZIP)</span>
+                        <span>ZIP</span>
                     </button>
-                    <button onclick="exportAllAsSingleTxt()" id="exportTxtBtn" disabled class="flex items-center space-x-1.5 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-950 disabled:text-slate-600 text-slate-200 text-xs font-semibold rounded-xl transition-colors border border-slate-750 cursor-pointer disabled:cursor-not-allowed shadow-sm">
+                    <button onclick="exportAllAsSingleTxt()" id="exportTxtBtn" disabled class="flex items-center space-x-1 px-3 py-2 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-950 disabled:text-slate-600 text-slate-200 text-xs font-semibold rounded-xl transition-colors border border-slate-750 cursor-pointer disabled:cursor-not-allowed shadow-sm">
                         <i data-lucide="file-text" class="w-4 h-4 text-indigo-400"></i>
-                        <span>Export Merged TXT</span>
+                        <span>TXT</span>
                     </button>
-                    <button onclick="exportAsJson()" id="exportJsonBtn" disabled class="flex items-center space-x-1.5 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-950 disabled:text-slate-600 text-slate-200 text-xs font-semibold rounded-xl transition-colors border border-slate-750 cursor-pointer disabled:cursor-not-allowed shadow-sm">
+                    <button onclick="exportAsJson()" id="exportJsonBtn" disabled class="flex items-center space-x-1 px-3 py-2 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-950 disabled:text-slate-600 text-slate-200 text-xs font-semibold rounded-xl transition-colors border border-slate-750 cursor-pointer disabled:cursor-not-allowed shadow-sm">
                         <i data-lucide="code" class="w-4 h-4 text-emerald-400"></i>
-                        <span>Export JSON</span>
+                        <span>JSON</span>
+                    </button>
+                    <button onclick="exportAsJsonc()" id="exportJsoncBtn" disabled class="flex items-center space-x-1 px-3 py-2 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-950 disabled:text-slate-600 text-slate-200 text-xs font-semibold rounded-xl transition-colors border border-slate-750 cursor-pointer disabled:cursor-not-allowed shadow-sm">
+                        <i data-lucide="message-square-code" class="w-4 h-4 text-amber-400"></i>
+                        <span>JSONC</span>
                     </button>
                 </div>
             </div>
@@ -330,11 +334,11 @@
                 <p class="font-semibold text-slate-200">Where are the inferred text results stored?</p>
                 <p class="text-slate-400">Because this application runs <strong>100% client-side in your browser</strong> with zero server calls, all inferred text results are stored securely in your browser's active memory (JavaScript RAM state via `fileQueue`).</p>
                 <div class="bg-slate-950 border border-slate-800 p-4 rounded-2xl space-y-2">
-                    <p class="font-semibold text-slate-200">Key Architectural Highlights:</p>
+                    <p class="font-semibold text-slate-200">Key Architectural Highlights & JSONC Export:</p>
                     <ul class="list-disc pl-4 space-y-1.5 text-slate-400">
+                        <li><strong>JSONC Support:</strong> Export your batch results to JSON with comments (`.jsonc`), which injects detailed metadata, extraction timestamps, word counts, and comments explaining each page's status directly into the file!</li>
                         <li><strong>Per-Page Processing:</strong> Images count as 1 page, and multi-page PDFs are automatically split and rendered page-by-page.</li>
                         <li><strong>Live Inspection & Editing:</strong> Click any item in the grid to inspect the original page side-by-side with the inferred text and make manual edits instantly.</li>
-                        <li><strong>Permanent Exports:</strong> Export anytime as a `.zip` archive containing individual `.txt` files + a merged summary, a single merged `.txt`, or structured JSON.</li>
                         <li><strong>Privacy & Safety:</strong> Nothing leaves your computer. Closing or refreshing your browser tab clears active memory.</li>
                     </ul>
                 </div>
@@ -579,6 +583,7 @@
             document.getElementById('exportZipBtn').setAttribute('disabled', 'true');
             document.getElementById('exportTxtBtn').setAttribute('disabled', 'true');
             document.getElementById('exportJsonBtn').setAttribute('disabled', 'true');
+            document.getElementById('exportJsoncBtn').setAttribute('disabled', 'true');
             document.getElementById('queueEtaText').textContent = 'Calculating...';
             showToast('Queue cleared', 'trash-2');
         }
@@ -753,6 +758,7 @@
                 document.getElementById('exportZipBtn').removeAttribute('disabled');
                 document.getElementById('exportTxtBtn').removeAttribute('disabled');
                 document.getElementById('exportJsonBtn').removeAttribute('disabled');
+                document.getElementById('exportJsoncBtn').removeAttribute('disabled');
                 showToast(`Batch OCR completed! ${completedCount} pages processed successfully.`, 'check-circle');
             }
         }
@@ -1057,6 +1063,59 @@
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
             showToast('JSON export downloaded', 'code');
+        }
+
+        // Export as JSONC (JSON with Comments)
+        function exportAsJsonc() {
+            const completedItems = fileQueue.filter(f => f.status === 'completed');
+            if (completedItems.length === 0) {
+                showToast('No completed OCR results to export', 'alert-circle');
+                return;
+            }
+
+            let jsonc = `{\n`;
+            jsonc += `  // ====================================================================\n`;
+            jsonc += `  // BULK OCR STUDIO - JSON WITH COMMENTS (JSONC) EXPORT\n`;
+            jsonc += `  // Generated: ${new Date().toLocaleString()}\n`;
+            jsonc += `  // Total Successfully Processed Pages: ${completedItems.length}\n`;
+            jsonc += `  // ====================================================================\n\n`;
+            jsonc += `  "metadata": {\n`;
+            jsonc += `    "app": "Bulk OCR Studio",\n`;
+            jsonc += `    "version": "v1.1.0",\n`;
+            jsonc += `    "exportTimestamp": "${new Date().toISOString()}",\n`;
+            jsonc += `    "totalItems": ${fileQueue.length},\n`;
+            jsonc += `    "completedItems": ${completedItems.length}\n`;
+            jsonc += `  },\n\n`;
+            jsonc += `  "pages": [\n`;
+
+            completedItems.forEach((item, idx) => {
+                const escapedText = JSON.stringify(item.text || '');
+                const wordCount = item.text ? item.text.split(/\s+/).filter(Boolean).length : 0;
+                
+                jsonc += `    {\n`;
+                jsonc += `      // [Page ${idx + 1}] File: ${item.name} (${formatBytes(item.size)})\n`;
+                jsonc += `      // Status: ${item.status} | Word Count: ${wordCount} words\n`;
+                jsonc += `      "id": "${item.id}",\n`;
+                jsonc += `      "name": "${item.name}",\n`;
+                jsonc += `      "sizeBytes": ${item.size},\n`;
+                jsonc += `      "wordCount": ${wordCount},\n`;
+                jsonc += `      "extractedText": ${escapedText}\n`;
+                jsonc +=`    }${idx < completedItems.length - 1 ? ',' : ''}\n`;
+            });
+
+            jsonc += `  ]\n`;
+            jsonc += `}\n`;
+
+            const blob = new Blob([jsonc], { type: 'application/json;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `bulk_ocr_data_${new Date().toISOString().slice(0,10)}.jsonc`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast('JSONC (JSON with comments) downloaded', 'message-square-code');
         }
 
         // Modal & Toast Helpers
