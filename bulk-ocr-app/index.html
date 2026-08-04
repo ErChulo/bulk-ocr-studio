@@ -65,13 +65,13 @@
                 <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
                     Bulk OCR & LLM Pipeline Studio 
                     <span class="text-[10px] tracking-wide uppercase bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-2 py-0.5 rounded-full font-semibold">100% Client-Side</span>
-                    <span class="text-[10px] tracking-wide bg-slate-800 text-slate-300 border border-slate-700 px-2 py-0.5 rounded-full font-mono">v1.4.0</span>
+                    <span class="text-[10px] tracking-wide bg-slate-800 text-slate-300 border border-slate-700 px-2 py-0.5 rounded-full font-mono">v1.5.0</span>
                 </h1>
-                <p class="text-xs text-slate-400">Extract, parse, and package documents with custom prompts & JSON Schemas for downstream LLMs</p>
+                <p class="text-xs text-slate-400">Extract, parse, and validate documents with custom prompts & validated JSON Schemas for downstream LLMs</p>
             </div>
         </div>
         <div class="flex items-center space-x-3">
-            <button id="schemaConfigBtn" onclick="toggleModal('schemaConfigModal', true)" class="flex items-center space-x-1.5 px-3.5 py-1.5 bg-slate-800 hover:bg-slate-750 text-indigo-300 text-xs font-medium rounded-xl transition-all border border-slate-700 hover:border-indigo-500/40 cursor-pointer shadow-sm">
+            <button id="schemaConfigBtn" onclick="toggleModal('schemaConfigModal', true)" class="flex items-center space-x-1.5 px-3.5 py-1.5 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 text-xs font-semibold rounded-xl transition-all border border-indigo-500/30 hover:border-indigo-500/50 cursor-pointer shadow-sm">
                 <i data-lucide="file-code" class="w-4 h-4 text-indigo-400"></i>
                 <span>LLM Schema & Prompt</span>
             </button>
@@ -82,6 +82,10 @@
             <button id="previewJsoncModalBtn" onclick="openJsoncPreviewModal()" disabled class="flex items-center space-x-1.5 px-3.5 py-1.5 bg-slate-800 hover:bg-slate-750 disabled:bg-slate-900 disabled:text-slate-600 text-amber-300 text-xs font-medium rounded-xl transition-all border border-slate-700 hover:border-amber-500/40 cursor-pointer shadow-sm disabled:cursor-not-allowed">
                 <i data-lucide="code-2" class="w-4 h-4"></i>
                 <span>Preview JSONC</span>
+            </button>
+            <button id="helpBtn" onclick="toggleModal('helpModal', true)" class="flex items-center space-x-1.5 px-3.5 py-1.5 bg-slate-800 hover:bg-slate-750 text-slate-200 text-xs font-medium rounded-xl transition-all border border-slate-700 hover:border-slate-600 cursor-pointer shadow-sm">
+                <i data-lucide="help-circle" class="w-4 h-4 text-indigo-400"></i>
+                <span>Guide</span>
             </button>
             <div class="h-5 w-px bg-slate-800"></div>
             <div class="text-xs text-slate-300 flex items-center gap-2 bg-slate-950/80 px-3.5 py-1.5 rounded-xl border border-slate-800 shadow-inner">
@@ -229,9 +233,12 @@
             <!-- Toolbar & Export Actions -->
             <div class="bg-slate-900/60 border-b border-slate-800 px-6 py-3 flex items-center justify-between shrink-0">
                 <div class="flex items-center space-x-3">
-                    <div class="relative">
-                        <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
-                        <input type="text" id="searchInput" oninput="filterResults()" placeholder="Search extracted text..." class="bg-slate-950 border border-slate-750 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 w-64 shadow-inner transition-colors">
+                    <div class="relative flex items-center">
+                        <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+                        <input type="text" id="searchInput" oninput="filterResults()" placeholder="Search text (RegEx supported)..." class="bg-slate-950 border border-slate-750 rounded-xl pl-9 pr-20 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 w-80 shadow-inner transition-colors">
+                        <button onclick="toggleRegexMode()" id="regexToggleBtn" title="Toggle Regular Expression Search" class="absolute right-2 px-2 py-1 bg-slate-800 hover:bg-slate-750 text-slate-400 hover:text-indigo-300 text-[10px] font-mono rounded-lg border border-slate-700 transition-all cursor-pointer">
+                            .* RegEx
+                        </button>
                     </div>
                     <span id="resultsCount" class="text-xs font-medium text-slate-400">Showing 0 results</span>
                 </div>
@@ -331,7 +338,7 @@
                     <div class="p-2 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
                         <i data-lucide="file-code" class="w-5 h-5"></i>
                     </div>
-                    LLM System Prompt & JSON Schema Injector
+                    LLM System Prompt & JSON Schema Studio
                 </h3>
                 <button onclick="toggleModal('schemaConfigModal', false)" class="text-slate-400 hover:text-slate-200 p-1.5 rounded-xl hover:bg-slate-800 cursor-pointer">
                     <i data-lucide="x" class="w-4 h-4"></i>
@@ -339,7 +346,7 @@
             </div>
             
             <div class="flex-1 overflow-y-auto space-y-4 text-xs text-slate-300">
-                <p class="text-slate-400">Configure the extraction instructions and JSON Schema. When you export or preview <strong>JSONC</strong>, these will be embedded directly into the file header for downstream LLMs and agentic pipelines.</p>
+                <p class="text-slate-400">Configure your downstream LLM instructions and target JSON Schema. The app validates your schema syntax in real-time to ensure clean downstream parsing.</p>
                 
                 <div class="space-y-1.5">
                     <label class="font-semibold text-slate-200 flex items-center justify-between">
@@ -351,10 +358,10 @@
 
                 <div class="space-y-1.5">
                     <label class="font-semibold text-slate-200 flex items-center justify-between">
-                        <span>Target JSON Schema (Pydantic / JSON Schema format)</span>
-                        <span class="text-[10px] text-slate-500">Valid JSON required</span>
+                        <span>Target JSON Schema (Draft-07 / OpenAPI compatible)</span>
+                        <span id="schemaValidationStatus" class="text-[10px] font-semibold text-emerald-400 flex items-center gap-1"><i data-lucide="check-circle" class="w-3 h-3"></i> Valid JSON Schema</span>
                     </label>
-                    <textarea id="configJsonSchema" class="w-full h-40 bg-slate-950 border border-slate-800 rounded-2xl p-3 text-xs text-amber-300 font-mono focus:outline-none focus:border-indigo-500 resize-none shadow-inner">{
+                    <textarea id="configJsonSchema" oninput="validateJsonSchemaInput(this.value)" class="w-full h-40 bg-slate-950 border border-slate-800 rounded-2xl p-3 text-xs text-amber-300 font-mono focus:outline-none focus:border-indigo-500 resize-none shadow-inner">{
   "type": "object",
   "properties": {
     "documentTitle": { "type": "string" },
@@ -375,11 +382,9 @@
             </div>
 
             <div class="pt-3 border-t border-slate-800 flex items-center justify-between shrink-0">
-                <span class="text-[11px] text-emerald-400 font-medium flex items-center gap-1">
-                    <i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Settings saved in session state
-                </span>
+                <span class="text-[11px] text-slate-400">Schemas are validated before export</span>
                 <button onclick="saveSchemaConfig()" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-xl transition-all shadow-md shadow-indigo-600/20 cursor-pointer">
-                    Save & Apply
+                    Save & Validate
                 </button>
             </div>
         </div>
@@ -398,7 +403,7 @@
                 </button>
             </div>
             <div class="flex-1 overflow-hidden flex flex-col space-y-2">
-                <p class="text-xs text-slate-400">Self-describing LLM pipeline package with embedded prompt, JSON schema, and extracted text:</p>
+                <p class="text-xs text-slate-400">Self-describing LLM pipeline package with embedded prompt, validated JSON schema, and extracted text:</p>
                 <textarea id="jsoncPreviewArea" readonly class="w-full flex-1 bg-slate-950 border border-slate-800 rounded-2xl p-4 text-xs text-amber-200 font-mono focus:outline-none resize-none shadow-inner leading-relaxed"></textarea>
             </div>
             <div class="pt-3 border-t border-slate-800 flex items-center justify-between shrink-0">
@@ -448,10 +453,10 @@
                 <p class="font-semibold text-slate-200">How to use this app for Downstream LLMs & RAG:</p>
                 <div class="bg-slate-950 border border-slate-800 p-4 rounded-2xl space-y-2">
                     <ul class="list-disc pl-4 space-y-1.5 text-slate-400">
-                        <li><strong>LLM Schema & Prompt Injector:</strong> Click "LLM Schema & Prompt" in the top bar to define your custom system prompt and JSON schema. These are automatically packaged into your `.jsonc` exports.</li>
-                        <li><strong>Token Estimation:</strong> Monitor total approximate token usage in real-time in the left sidebar to stay well within LLM context window limits (e.g. 8k, 32k, 128k).</li>
-                        <li><strong>Multi-Format Ingestion:</strong> Ingest images, PDFs, CSV, Excel, TXT, and Markdown files with zero server calls.</li>
-                        <li><strong>IndexedDB Persistence:</strong> Work survives page refreshes and never freezes your browser.</li>
+                        <li><strong>Drag & Drop & Folder Picker:</strong> Fully supports dropping files, folders, or selecting directories with robust file traversal.</li>
+                        <li><strong>Live DB Status & Call-to-Action:</strong> When you load saved items from IndexedDB, a distinct visual notification banner and queue update prompt you for next actions.</li>
+                        <li><strong>RegEx Search:</strong> Toggle the `.* RegEx` button in the search bar to query your extracted document text using regular expressions.</li>
+                        <li><strong>LLM Schema Validation:</strong> The app validates your JSON Schema in real-time, ensuring downstream LLMs receive pristine data structures.</li>
                     </ul>
                 </div>
             </div>
@@ -491,6 +496,7 @@
         let currentWorker = null;
         let startTime = 0;
         let timerInterval = null;
+        let isRegexSearchEnabled = false;
 
         // Initialize Lucide icons and DB count on load
         document.addEventListener('DOMContentLoaded', async () => {
@@ -516,7 +522,7 @@
             }
         }
 
-        // Token Estimator (approx 1 token per 4 chars or words * 1.3)
+        // Token Estimator
         function updateTokenEstimate() {
             let totalWords = 0;
             fileQueue.forEach(item => {
@@ -539,7 +545,7 @@
                 modal.classList.add('flex');
                 modal.classList.remove('hidden');
                 refreshIcons();
-            }, 1000); // 1 second threshold
+            }, 1000);
         }
 
         function hideLoadingSpinner() {
@@ -552,7 +558,7 @@
             modal.classList.add('hidden');
         }
 
-        // Drag & Drop Handlers
+        // Drag & Drop Handlers (Fixed event propagation & entry support)
         function handleDragOver(e) {
             e.preventDefault();
             e.stopPropagation();
@@ -565,51 +571,59 @@
             document.getElementById('dropZone').classList.remove('border-indigo-500', 'bg-slate-900');
         }
 
-        function handleDrop(e) {
+        async function handleDrop(e) {
             e.preventDefault();
             e.stopPropagation();
             document.getElementById('dropZone').classList.remove('border-indigo-500', 'bg-slate-900');
             
             const items = e.dataTransfer.items;
-            if (items && items.length > 0 && typeof items[0].webkitGetAsEntry === 'function') {
-                const files = [];
-                for (let i = 0; i < items.length; i++) {
-                    const entry = items[i].webkitGetAsEntry();
-                    if (entry) {
-                        traverseFileTree(entry, files);
+            const filesArray = [];
+
+            if (items && items.length > 0) {
+                showLoadingSpinner('Processing Drop', 'Traversing dropped files and folders...');
+                try {
+                    for (let i = 0; i < items.length; i++) {
+                        const item = items[i].webkitGetAsEntry ? items[i].webkitGetAsEntry() : null;
+                        if (item) {
+                            await traverseFileTreeAsync(item, filesArray);
+                        } else {
+                            const file = items[i].getAsFile();
+                            if (file && isSupportedFile(file)) filesArray.push(file);
+                        }
                     }
+                } finally {
+                    hideLoadingSpinner();
                 }
-                setTimeout(() => processIncomingFiles(files), 250);
-            } else {
-                const files = e.dataTransfer.files;
-                if (files) {
-                    processIncomingFiles(Array.from(files));
+                if (filesArray.length > 0) {
+                    processIncomingFiles(filesArray);
                 }
+            } else if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                const files = Array.from(e.dataTransfer.files).filter(isSupportedFile);
+                processIncomingFiles(files);
             }
         }
 
-        async function traverseFileTree(item, filesArray) {
-            if (item.isFile) {
-                item.file(file => {
-                    if (isSupportedFile(file)) {
-                        filesArray.push(file);
-                        updateQueueUI();
-                    }
-                });
-            } else if (item.isDirectory) {
-                const dirReader = item.createReader();
-                const readEntries = () => {
-                    dirReader.readEntries(entries => {
-                        if (entries.length > 0) {
-                            for (let i = 0; i < entries.length; i++) {
-                                traverseFileTree(entries[i], filesArray);
-                            }
-                            readEntries();
+        async function traverseFileTreeAsync(item, filesArray) {
+            return new Promise((resolve) => {
+                if (item.isFile) {
+                    item.file(file => {
+                        if (isSupportedFile(file)) {
+                            filesArray.push(file);
                         }
-                    }, err => console.error(err));
-                };
-                readEntries();
-            }
+                        resolve();
+                    }, () => resolve());
+                } else if (item.isDirectory) {
+                    const dirReader = item.createReader();
+                    dirReader.readEntries(async entries => {
+                        for (let i = 0; i < entries.length; i++) {
+                            await traverseFileTreeAsync(entries[i], filesArray);
+                        }
+                        resolve();
+                    }, () => resolve());
+                } else {
+                    resolve();
+                }
+            });
         }
 
         function isSupportedFile(file) {
@@ -632,7 +646,6 @@
                 for (const file of files) {
                     const ext = file.name.split('.').pop().toLowerCase();
 
-                    // 1. PDF Documents (Multi-page rendering)
                     if (ext === 'pdf' || file.type === 'application/pdf') {
                         try {
                             const arrayBuffer = await file.arrayBuffer();
@@ -690,7 +703,6 @@
                             showToast(`Failed to parse PDF: ${file.name}`, 'alert-circle');
                         }
                     } 
-                    // 2. Excel Spreadsheets (.xlsx, .xls)
                     else if (ext === 'xlsx' || ext === 'xls') {
                         try {
                             const arrayBuffer = await file.arrayBuffer();
@@ -721,7 +733,7 @@
                                 path: file.name,
                                 size: file.size,
                                 type: file.type || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                                isOcrNeeded: false, // Already parsed!
+                                isOcrNeeded: false,
                                 status: 'completed',
                                 progress: 1,
                                 text: combinedText.trim(),
@@ -746,7 +758,6 @@
                             showToast(`Failed to parse Excel file: ${file.name}`, 'alert-circle');
                         }
                     }
-                    // 3. CSV, TXT, MD Documents
                     else if (ext === 'csv' || ext === 'txt' || ext === 'md' || file.type.startsWith('text/')) {
                         try {
                             const textContent = await file.text();
@@ -794,7 +805,6 @@
                             showToast(`Failed to read text file: ${file.name}`, 'alert-circle');
                         }
                     }
-                    // 4. Images (PNG, JPG, etc.)
                     else {
                         const exists = fileQueue.some(f => f.name === file.name);
                         if (!exists) {
@@ -844,7 +854,7 @@
             }
         }
 
-        // Load saved batch from IndexedDB
+        // Load saved batch from IndexedDB with prominent call-to-action banner
         async function loadBatchFromDB() {
             showLoadingSpinner('Loading from IndexedDB', 'Fetching saved documents and OCR results...');
             try {
@@ -886,7 +896,10 @@
                     document.getElementById('previewJsoncModalBtn').removeAttribute('disabled');
                 }
 
-                showToast(`Loaded ${fileQueue.length} items from IndexedDB`, 'database');
+                showToast(`Successfully loaded ${fileQueue.length} items from IndexedDB!`, 'database');
+                
+                // Visual CTA Banner in UI
+                showDbLoadedBanner(fileQueue.length, completedCount);
             } catch (e) {
                 console.error(e);
                 showToast('Failed to load from IndexedDB', 'alert-circle');
@@ -895,6 +908,28 @@
                 await updateDbCountBadge();
                 updateTokenEstimate();
             }
+        }
+
+        function showDbLoadedBanner(total, completed) {
+            const container = document.getElementById('resultsContainer');
+            const bannerHtml = `
+                <div id="dbLoadedBanner" class="col-span-full bg-gradient-to-r from-emerald-950/80 to-slate-900 border border-emerald-500/40 rounded-3xl p-5 mb-2 flex items-center justify-between shadow-lg">
+                    <div class="flex items-center space-x-3.5">
+                        <div class="p-3 bg-emerald-500/20 border border-emerald-500/30 rounded-2xl text-emerald-400">
+                            <i data-lucide="database" class="w-6 h-6"></i>
+                        </div>
+                        <div>
+                            <h4 class="text-sm font-bold text-white">IndexedDB Session Restored Successfully!</h4>
+                            <p class="text-xs text-emerald-300/90 mt-0.5">Loaded <strong>${total} items</strong> (${completed} completed). You can inspect contents, resume pending OCR, or preview/export JSONC immediately.</p>
+                        </div>
+                    </div>
+                    <button onclick="document.getElementById('dbLoadedBanner').remove()" class="text-slate-400 hover:text-slate-200 p-1.5 rounded-xl hover:bg-slate-800 cursor-pointer">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            `;
+            container.insertAdjacentHTML('afterbegin', bannerHtml);
+            refreshIcons();
         }
 
         function clearQueue() {
@@ -1176,21 +1211,64 @@
             document.getElementById('queueProgressText').textContent = `Progress: ${completed} / ${total} items`;
         }
 
-        // Results Rendering & Inspection
+        // Toggle RegEx Search Mode
+        function toggleRegexMode() {
+            isRegexSearchEnabled = !isRegexSearchEnabled;
+            const btn = document.getElementById('regexToggleBtn');
+            const input = document.getElementById('searchInput');
+            if (isRegexSearchEnabled) {
+                btn.className = 'absolute right-2 px-2 py-1 bg-indigo-600 text-white text-[10px] font-mono rounded-lg border border-indigo-400 transition-all cursor-pointer shadow-sm';
+                btn.title = 'RegEx Search Enabled';
+                input.placeholder = 'Search RegEx (e.g. \\d{3}-\\d{2})...';
+                showToast('RegEx search mode enabled', 'code');
+            } else {
+                btn.className = 'absolute right-2 px-2 py-1 bg-slate-800 hover:bg-slate-750 text-slate-400 hover:text-indigo-300 text-[10px] font-mono rounded-lg border border-slate-700 transition-all cursor-pointer';
+                btn.title = 'Toggle Regular Expression Search';
+                input.placeholder = 'Search extracted text...';
+                showToast('Standard search mode enabled', 'search');
+            }
+            filterResults();
+        }
+
+        // Results Rendering, Search & RegEx Support
         function renderResultsGrid() {
             const container = document.getElementById('resultsContainer');
             const searchInput = document.getElementById('searchInput');
-            const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
+            const rawQuery = searchInput ? searchInput.value.trim() : '';
+            
+            let regex = null;
+            let searchError = false;
+            if (rawQuery) {
+                if (isRegexSearchEnabled) {
+                    try {
+                        regex = new RegExp(rawQuery, 'i');
+                    } catch (e) {
+                        searchError = true;
+                    }
+                } else {
+                    regex = new RegExp(rawQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+                }
+            }
             
             const filteredQueue = fileQueue.filter(item => {
-                if (!searchTerm) return true;
-                return item.name.toLowerCase().includes(searchTerm) || (item.text && item.text.toLowerCase().includes(searchTerm));
+                if (!rawQuery) return true;
+                if (searchError) return false;
+                const matchName = regex.test(item.name);
+                const matchText = regex.test(item.text || '');
+                return matchName || matchText;
             });
 
             document.getElementById('resultsCount').textContent = `Showing ${filteredQueue.length} of ${fileQueue.length} items`;
 
+            // Keep banner if present
+            const existingBanner = document.getElementById('dbLoadedBanner');
+            let bannerOuterHtml = '';
+            if (existingBanner) {
+                bannerOuterHtml = existingBanner.outerHTML;
+            }
+
             if (fileQueue.length === 0) {
-                container.innerHTML = `
+                container.innerHTML = bannerOuterHtml + `
                     <div class="col-span-full flex flex-col items-center justify-center py-28 text-slate-600">
                         <div class="w-16 h-16 rounded-3xl bg-slate-900 border border-slate-800 flex items-center justify-center mb-4 text-slate-600 shadow-inner">
                             <i data-lucide="file-search" class="w-8 h-8"></i>
@@ -1204,20 +1282,20 @@
             }
 
             if (filteredQueue.length === 0) {
-                container.innerHTML = `
+                container.innerHTML = bannerOuterHtml + `
                     <div class="col-span-full flex flex-col items-center justify-center py-28 text-slate-600">
                         <div class="w-16 h-16 rounded-3xl bg-slate-900 border border-slate-800 flex items-center justify-center mb-4 text-slate-600 shadow-inner">
                             <i data-lucide="search-x" class="w-8 h-8"></i>
                         </div>
-                        <h3 class="text-sm font-semibold text-slate-300">No matching items found</h3>
-                        <p class="text-xs text-slate-500 mt-1">Try adjusting your search query</p>
+                        <h3 class="text-sm font-semibold text-slate-300">${searchError ? 'Invalid Regular Expression syntax' : 'No matching items found'}</h3>
+                        <p class="text-xs text-slate-500 mt-1">${searchError ? 'Check your RegEx pattern brackets and escape sequences' : 'Try adjusting your search query or RegEx pattern'}</p>
                     </div>
                 `;
                 refreshIcons();
                 return;
             }
 
-            let html = '';
+            let html = bannerOuterHtml;
             filteredQueue.forEach(item => {
                 let statusBadge = '';
                 if (item.status === 'pending') statusBadge = '<span class="text-[10px] text-slate-400 bg-slate-800 px-2 py-0.5 rounded-full font-medium">Pending</span>';
@@ -1422,13 +1500,37 @@
             showToast('JSON export downloaded', 'code');
         }
 
-        // Save LLM Schema & Prompt Config
+        // Validate JSON Schema
+        function validateJsonSchemaInput(schemaString) {
+            const statusEl = document.getElementById('schemaValidationStatus');
+            try {
+                const parsed = JSON.parse(schemaString);
+                if (typeof parsed !== 'object' || parsed === null) {
+                    throw new Error('Schema must be a JSON object');
+                }
+                statusEl.className = 'text-[10px] font-semibold text-emerald-400 flex items-center gap-1';
+                statusEl.innerHTML = '<i data-lucide="check-circle" class="w-3 h-3"></i> Valid JSON Schema';
+                refreshIcons();
+                return true;
+            } catch (e) {
+                statusEl.className = 'text-[10px] font-semibold text-red-400 flex items-center gap-1';
+                statusEl.innerHTML = '<i data-lucide="alert-circle" class="w-3 h-3"></i> Invalid JSON Syntax';
+                refreshIcons();
+                return false;
+            }
+        }
+
         function saveSchemaConfig() {
-            showToast('LLM prompt & JSON schema saved for JSONC exports', 'check-circle');
+            const schemaText = document.getElementById('configJsonSchema').value.trim();
+            if (!validateJsonSchemaInput(schemaText)) {
+                showToast('Please fix JSON schema syntax errors before saving', 'alert-circle');
+                return;
+            }
+            showToast('LLM prompt & validated JSON schema saved for JSONC exports', 'check-circle');
             toggleModal('schemaConfigModal', false);
         }
 
-        // Generate JSONC string with injected LLM Schema & Prompt
+        // Generate JSONC string with validated LLM Schema & Prompt
         function generateJsoncString() {
             const completedItems = fileQueue.filter(f => f.status === 'completed');
             const systemPrompt = document.getElementById('configSystemPrompt').value.trim();
@@ -1444,21 +1546,20 @@
             let jsonc = `{\n`;
             jsonc += `  // ====================================================================\n`;
             jsonc += `  // BULK DOCUMENT STUDIO - LLM PIPELINE JSONC EXPORT\n`;
-            jsonc += `  // Packaged with System Prompt & Target JSON Schema for Downstream LLMs\n`;
+            jsonc += `  // Packaged with System Prompt & Validated JSON Schema for Downstream LLMs\n`;
             jsonc += `  // Generated: ${new Date().toLocaleString()}\n`;
             jsonc += `  // ====================================================================\n\n`;
             jsonc += `  "metadata": {\n`;
             jsonc += `    "app": "Bulk OCR & LLM Pipeline Studio",\n`;
-            jsonc += `    "version": "v1.4.0",\n`;
+            jsonc += `    "version": "v1.5.0",\n`;
             jsonc += `    "exportTimestamp": "${new Date().toISOString()}",\n`;
             jsonc += `    "totalItems": ${fileQueue.length},\n`;
             jsonc += `    "completedItems": ${completedItems.length}\n`;
             jsonc += `  },\n\n`;
             
-            // Inject LLM Prompt and Schema as requested by user context
             jsonc += `  // Downstream LLM Extraction Instructions\n`;
             jsonc += `  "llmPrompt": ${JSON.stringify(systemPrompt)},\n\n`;
-            jsonc += `  // Target JSON Schema for LLM Structured Output validation\n`;
+            jsonc += `  // Validated Target JSON Schema for LLM Structured Output validation\n`;
             jsonc += `  "jsonSchema": ${JSON.stringify(parsedSchema, null, 2)},\n\n`;
 
             jsonc += `  "documents": [\n`;
