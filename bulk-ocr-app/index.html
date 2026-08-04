@@ -63,10 +63,14 @@
                     <span class="text-[10px] tracking-wide uppercase bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-2 py-0.5 rounded-full font-semibold">100% Client-Side</span>
                     <span class="text-[10px] tracking-wide bg-slate-800 text-slate-300 border border-slate-700 px-2 py-0.5 rounded-full font-mono">v1.1.0</span>
                 </h1>
-                <p class="text-xs text-slate-400">Batch extract text from local directories, images, and multi-page PDF documents securely in your browser</p>
+                <p class="text-xs text-slate-400">Batch extract text from local directories, images, and multi-page PDF documents for downstream JSONC modules</p>
             </div>
         </div>
         <div class="flex items-center space-x-3">
+            <button id="previewJsoncModalBtn" onclick="openJsoncPreviewModal()" disabled class="flex items-center space-x-1.5 px-3.5 py-1.5 bg-slate-800 hover:bg-slate-750 disabled:bg-slate-900 disabled:text-slate-600 text-amber-300 text-xs font-medium rounded-xl transition-all border border-slate-700 hover:border-amber-500/40 cursor-pointer shadow-sm disabled:cursor-not-allowed">
+                <i data-lucide="code-2" class="w-4 h-4"></i>
+                <span>Preview JSONC</span>
+            </button>
             <button id="helpBtn" onclick="toggleModal('helpModal', true)" class="flex items-center space-x-1.5 px-3.5 py-1.5 bg-slate-800 hover:bg-slate-750 text-slate-200 text-xs font-medium rounded-xl transition-all border border-slate-700 hover:border-slate-600 cursor-pointer shadow-sm">
                 <i data-lucide="help-circle" class="w-4 h-4 text-indigo-400"></i>
                 <span>Guide & Storage</span>
@@ -303,6 +307,38 @@
         </main>
     </div>
 
+    <!-- JSONC Preview Modal -->
+    <div id="jsoncPreviewModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-3xl w-full p-7 shadow-2xl space-y-4 ring-1 ring-white/15 flex flex-col max-h-[85vh]">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3.5 shrink-0">
+                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                    <i data-lucide="message-square-code" class="w-5 h-5 text-amber-400"></i>
+                    <span>JSONC (JSON with Comments) Preview</span>
+                </h3>
+                <button onclick="toggleModal('jsoncPreviewModal', false)" class="text-slate-400 hover:text-slate-200 p-1.5 rounded-xl hover:bg-slate-800 cursor-pointer">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            <div class="flex-1 overflow-hidden flex flex-col space-y-2">
+                <p class="text-xs text-slate-400">Optimized schema format for downstream ingestion modules and RAG pipelines:</p>
+                <textarea id="jsoncPreviewArea" readonly class="w-full flex-1 bg-slate-950 border border-slate-800 rounded-2xl p-4 text-xs text-amber-200 font-mono focus:outline-none resize-none shadow-inner leading-relaxed"></textarea>
+            </div>
+            <div class="pt-3 border-t border-slate-800 flex items-center justify-between shrink-0">
+                <span class="text-[11px] text-slate-400">Ready for downstream integration</span>
+                <div class="flex items-center space-x-3">
+                    <button onclick="copyJsoncPreview()" class="px-4 py-2 bg-slate-800 hover:bg-slate-750 text-slate-200 font-semibold text-xs rounded-xl transition-all border border-slate-700 cursor-pointer flex items-center gap-1.5 shadow-sm">
+                        <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                        <span>Copy JSONC</span>
+                    </button>
+                    <button onclick="exportAsJsonc()" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold text-xs rounded-xl transition-all shadow-md shadow-amber-600/20 cursor-pointer flex items-center gap-1.5">
+                        <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                        <span>Download .jsonc</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Loading / Spinner Modal (triggers after 1s delay) -->
     <div id="loadingModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center hidden">
         <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-sm w-full p-8 shadow-2xl flex flex-col items-center text-center space-y-4 ring-1 ring-white/10">
@@ -336,7 +372,7 @@
                 <div class="bg-slate-950 border border-slate-800 p-4 rounded-2xl space-y-2">
                     <p class="font-semibold text-slate-200">Key Architectural Highlights & JSONC Export:</p>
                     <ul class="list-disc pl-4 space-y-1.5 text-slate-400">
-                        <li><strong>JSONC Support:</strong> Export your batch results to JSON with comments (`.jsonc`), which injects detailed metadata, extraction timestamps, word counts, and comments explaining each page's status directly into the file!</li>
+                        <li><strong>JSONC Support:</strong> Export your batch results to JSON with comments (`.jsonc`), which injects detailed metadata, extraction timestamps, word counts, and comments explaining each page's status directly into the file for downstream modules!</li>
                         <li><strong>Per-Page Processing:</strong> Images count as 1 page, and multi-page PDFs are automatically split and rendered page-by-page.</li>
                         <li><strong>Live Inspection & Editing:</strong> Click any item in the grid to inspect the original page side-by-side with the inferred text and make manual edits instantly.</li>
                         <li><strong>Privacy & Safety:</strong> Nothing leaves your computer. Closing or refreshing your browser tab clears active memory.</li>
@@ -584,6 +620,7 @@
             document.getElementById('exportTxtBtn').setAttribute('disabled', 'true');
             document.getElementById('exportJsonBtn').setAttribute('disabled', 'true');
             document.getElementById('exportJsoncBtn').setAttribute('disabled', 'true');
+            document.getElementById('previewJsoncModalBtn').setAttribute('disabled', 'true');
             document.getElementById('queueEtaText').textContent = 'Calculating...';
             showToast('Queue cleared', 'trash-2');
         }
@@ -759,6 +796,7 @@
                 document.getElementById('exportTxtBtn').removeAttribute('disabled');
                 document.getElementById('exportJsonBtn').removeAttribute('disabled');
                 document.getElementById('exportJsoncBtn').removeAttribute('disabled');
+                document.getElementById('previewJsoncModalBtn').removeAttribute('disabled');
                 showToast(`Batch OCR completed! ${completedCount} pages processed successfully.`, 'check-circle');
             }
         }
@@ -1065,17 +1103,13 @@
             showToast('JSON export downloaded', 'code');
         }
 
-        // Export as JSONC (JSON with Comments)
-        function exportAsJsonc() {
+        // Generate JSONC string
+        function generateJsoncString() {
             const completedItems = fileQueue.filter(f => f.status === 'completed');
-            if (completedItems.length === 0) {
-                showToast('No completed OCR results to export', 'alert-circle');
-                return;
-            }
-
             let jsonc = `{\n`;
             jsonc += `  // ====================================================================\n`;
             jsonc += `  // BULK OCR STUDIO - JSON WITH COMMENTS (JSONC) EXPORT\n`;
+            jsonc += `  // Optimized for downstream integration modules and RAG ingestion\n`;
             jsonc += `  // Generated: ${new Date().toLocaleString()}\n`;
             jsonc += `  // Total Successfully Processed Pages: ${completedItems.length}\n`;
             jsonc += `  // ====================================================================\n\n`;
@@ -1100,12 +1134,42 @@
                 jsonc += `      "sizeBytes": ${item.size},\n`;
                 jsonc += `      "wordCount": ${wordCount},\n`;
                 jsonc += `      "extractedText": ${escapedText}\n`;
-                jsonc +=`    }${idx < completedItems.length - 1 ? ',' : ''}\n`;
+                jsonc += `    }${idx < completedItems.length - 1 ? ',' : ''}\n`;
             });
 
             jsonc += `  ]\n`;
             jsonc += `}\n`;
+            return jsonc;
+        }
 
+        // Open JSONC Preview Modal
+        function openJsoncPreviewModal() {
+            const completedItems = fileQueue.filter(f => f.status === 'completed');
+            if (completedItems.length === 0) {
+                showToast('No completed OCR results to preview', 'alert-circle');
+                return;
+            }
+            const jsoncStr = generateJsoncString();
+            document.getElementById('jsoncPreviewArea').value = jsoncStr;
+            toggleModal('jsoncPreviewModal', true);
+        }
+
+        function copyJsoncPreview() {
+            const area = document.getElementById('jsoncPreviewArea');
+            area.select();
+            navigator.clipboard.writeText(area.value);
+            showToast('JSONC copied to clipboard', 'copy');
+        }
+
+        // Export as JSONC (JSON with Comments)
+        function exportAsJsonc() {
+            const completedItems = fileQueue.filter(f => f.status === 'completed');
+            if (completedItems.length === 0) {
+                showToast('No completed OCR results to export', 'alert-circle');
+                return;
+            }
+
+            const jsonc = generateJsoncString();
             const blob = new Blob([jsonc], { type: 'application/json;charset=utf-8' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -1116,6 +1180,7 @@
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
             showToast('JSONC (JSON with comments) downloaded', 'message-square-code');
+            toggleModal('jsoncPreviewModal', false);
         }
 
         // Modal & Toast Helpers
