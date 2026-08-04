@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bulk OCR Studio - Client-Side Batch Optical Character Recognition & Document Parser</title>
+    <title>Bulk OCR Studio - Client-Side Batch Optical Character Recognition & LLM Schema Pipeline</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Tesseract.js CDN v5 -->
@@ -63,25 +63,25 @@
             </div>
             <div>
                 <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
-                    Bulk OCR & Document Studio 
+                    Bulk OCR & LLM Pipeline Studio 
                     <span class="text-[10px] tracking-wide uppercase bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-2 py-0.5 rounded-full font-semibold">100% Client-Side</span>
-                    <span class="text-[10px] tracking-wide bg-slate-800 text-slate-300 border border-slate-700 px-2 py-0.5 rounded-full font-mono">v1.3.0</span>
+                    <span class="text-[10px] tracking-wide bg-slate-800 text-slate-300 border border-slate-700 px-2 py-0.5 rounded-full font-mono">v1.4.0</span>
                 </h1>
-                <p class="text-xs text-slate-400">Extract & parse Images, PDFs, CSV, Excel (.xlsx), Text, and Markdown for downstream JSONC modules</p>
+                <p class="text-xs text-slate-400">Extract, parse, and package documents with custom prompts & JSON Schemas for downstream LLMs</p>
             </div>
         </div>
         <div class="flex items-center space-x-3">
+            <button id="schemaConfigBtn" onclick="toggleModal('schemaConfigModal', true)" class="flex items-center space-x-1.5 px-3.5 py-1.5 bg-slate-800 hover:bg-slate-750 text-indigo-300 text-xs font-medium rounded-xl transition-all border border-slate-700 hover:border-indigo-500/40 cursor-pointer shadow-sm">
+                <i data-lucide="file-code" class="w-4 h-4 text-indigo-400"></i>
+                <span>LLM Schema & Prompt</span>
+            </button>
             <button id="loadSavedBatchBtn" onclick="loadBatchFromDB()" class="flex items-center space-x-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-750 text-slate-200 text-xs font-medium rounded-xl transition-all border border-slate-700 hover:border-emerald-500/40 cursor-pointer shadow-sm">
                 <i data-lucide="database" class="w-4 h-4 text-emerald-400"></i>
-                <span>Load Saved DB (<span id="dbCountBadge">0</span>)</span>
+                <span>Load DB (<span id="dbCountBadge">0</span>)</span>
             </button>
             <button id="previewJsoncModalBtn" onclick="openJsoncPreviewModal()" disabled class="flex items-center space-x-1.5 px-3.5 py-1.5 bg-slate-800 hover:bg-slate-750 disabled:bg-slate-900 disabled:text-slate-600 text-amber-300 text-xs font-medium rounded-xl transition-all border border-slate-700 hover:border-amber-500/40 cursor-pointer shadow-sm disabled:cursor-not-allowed">
                 <i data-lucide="code-2" class="w-4 h-4"></i>
                 <span>Preview JSONC</span>
-            </button>
-            <button id="helpBtn" onclick="toggleModal('helpModal', true)" class="flex items-center space-x-1.5 px-3.5 py-1.5 bg-slate-800 hover:bg-slate-750 text-slate-200 text-xs font-medium rounded-xl transition-all border border-slate-700 hover:border-slate-600 cursor-pointer shadow-sm">
-                <i data-lucide="help-circle" class="w-4 h-4 text-indigo-400"></i>
-                <span>Guide & Formats</span>
             </button>
             <div class="h-5 w-px bg-slate-800"></div>
             <div class="text-xs text-slate-300 flex items-center gap-2 bg-slate-950/80 px-3.5 py-1.5 rounded-xl border border-slate-800 shadow-inner">
@@ -190,7 +190,7 @@
             </div>
 
             <!-- Queue Summary Footer -->
-            <div class="p-3 bg-slate-950 border-t border-slate-800 text-xs text-slate-400 flex flex-col space-y-1.5 shadow-inner">
+            <div class="p-3 bg-slate-950 border-t border-slate-800 text-xs text-slate-400 flex flex-col space-y-2 shadow-inner">
                 <div class="flex items-center justify-between">
                     <span id="queueProgressText" class="font-medium text-slate-300">Progress: 0 / 0 items</span>
                     <span id="queueTimeText" class="font-mono text-slate-400">Elapsed: 0s</span>
@@ -198,6 +198,10 @@
                 <div class="flex items-center justify-between text-indigo-400 font-semibold bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-1.5 rounded-xl">
                     <span class="flex items-center gap-1.5"><i data-lucide="timer" class="w-3.5 h-3.5"></i> Est. Remaining:</span>
                     <span id="queueEtaText" class="font-mono">Calculating...</span>
+                </div>
+                <div class="flex items-center justify-between text-slate-300 bg-slate-900 border border-slate-800 px-2.5 py-1.5 rounded-xl text-[11px]">
+                    <span class="flex items-center gap-1.5"><i data-lucide="cpu" class="w-3.5 h-3.5 text-violet-400"></i> Est. Tokens:</span>
+                    <span id="queueTokenEstimate" class="font-mono text-violet-300">0 tokens</span>
                 </div>
             </div>
         </aside>
@@ -319,6 +323,68 @@
         </main>
     </div>
 
+    <!-- LLM Schema & Prompt Configurator Modal -->
+    <div id="schemaConfigModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl w-full p-7 shadow-2xl space-y-5 ring-1 ring-white/15 flex flex-col max-h-[90vh]">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-4 shrink-0">
+                <h3 class="text-base font-bold text-white flex items-center gap-2.5">
+                    <div class="p-2 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
+                        <i data-lucide="file-code" class="w-5 h-5"></i>
+                    </div>
+                    LLM System Prompt & JSON Schema Injector
+                </h3>
+                <button onclick="toggleModal('schemaConfigModal', false)" class="text-slate-400 hover:text-slate-200 p-1.5 rounded-xl hover:bg-slate-800 cursor-pointer">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto space-y-4 text-xs text-slate-300">
+                <p class="text-slate-400">Configure the extraction instructions and JSON Schema. When you export or preview <strong>JSONC</strong>, these will be embedded directly into the file header for downstream LLMs and agentic pipelines.</p>
+                
+                <div class="space-y-1.5">
+                    <label class="font-semibold text-slate-200 flex items-center justify-between">
+                        <span>Downstream System Prompt / Instructions</span>
+                        <span class="text-[10px] text-slate-500">Injected into JSONC metadata</span>
+                    </label>
+                    <textarea id="configSystemPrompt" class="w-full h-24 bg-slate-950 border border-slate-800 rounded-2xl p-3 text-xs text-slate-200 font-mono focus:outline-none focus:border-indigo-500 resize-none shadow-inner">You are an expert data extraction agent. Extract structured entities and records from the provided OCR and document text matching the attached JSON schema.</textarea>
+                </div>
+
+                <div class="space-y-1.5">
+                    <label class="font-semibold text-slate-200 flex items-center justify-between">
+                        <span>Target JSON Schema (Pydantic / JSON Schema format)</span>
+                        <span class="text-[10px] text-slate-500">Valid JSON required</span>
+                    </label>
+                    <textarea id="configJsonSchema" class="w-full h-40 bg-slate-950 border border-slate-800 rounded-2xl p-3 text-xs text-amber-300 font-mono focus:outline-none focus:border-indigo-500 resize-none shadow-inner">{
+  "type": "object",
+  "properties": {
+    "documentTitle": { "type": "string" },
+    "extractedEntities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "key": { "type": "string" },
+          "value": { "type": "string" }
+        }
+      }
+    }
+  },
+  "required": ["documentTitle", "extractedEntities"]
+}</textarea>
+                </div>
+            </div>
+
+            <div class="pt-3 border-t border-slate-800 flex items-center justify-between shrink-0">
+                <span class="text-[11px] text-emerald-400 font-medium flex items-center gap-1">
+                    <i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Settings saved in session state
+                </span>
+                <button onclick="saveSchemaConfig()" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-xl transition-all shadow-md shadow-indigo-600/20 cursor-pointer">
+                    Save & Apply
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- JSONC Preview Modal -->
     <div id="jsoncPreviewModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center hidden">
         <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-3xl w-full p-7 shadow-2xl space-y-4 ring-1 ring-white/15 flex flex-col max-h-[85vh]">
@@ -332,11 +398,11 @@
                 </button>
             </div>
             <div class="flex-1 overflow-hidden flex flex-col space-y-2">
-                <p class="text-xs text-slate-400">Optimized schema format for downstream integration modules and RAG pipelines:</p>
+                <p class="text-xs text-slate-400">Self-describing LLM pipeline package with embedded prompt, JSON schema, and extracted text:</p>
                 <textarea id="jsoncPreviewArea" readonly class="w-full flex-1 bg-slate-950 border border-slate-800 rounded-2xl p-4 text-xs text-amber-200 font-mono focus:outline-none resize-none shadow-inner leading-relaxed"></textarea>
             </div>
             <div class="pt-3 border-t border-slate-800 flex items-center justify-between shrink-0">
-                <span class="text-[11px] text-slate-400">Ready for downstream integration</span>
+                <span class="text-[11px] text-slate-400">Ready for downstream LLM ingestion</span>
                 <div class="flex items-center space-x-3">
                     <button onclick="copyJsoncPreview()" class="px-4 py-2 bg-slate-800 hover:bg-slate-750 text-slate-200 font-semibold text-xs rounded-xl transition-all border border-slate-700 cursor-pointer flex items-center gap-1.5 shadow-sm">
                         <i data-lucide="copy" class="w-3.5 h-3.5"></i>
@@ -372,23 +438,20 @@
                     <div class="p-2 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
                         <i data-lucide="info" class="w-5 h-5"></i>
                     </div>
-                    Bulk Document Studio Guide & Formats
+                    Bulk LLM Pipeline Studio Guide
                 </h3>
                 <button onclick="toggleModal('helpModal', false)" class="text-slate-400 hover:text-slate-200 p-1.5 rounded-xl hover:bg-slate-800 cursor-pointer">
                     <i data-lucide="x" class="w-4 h-4"></i>
                 </button>
             </div>
             <div class="space-y-3.5 text-xs text-slate-300 leading-relaxed">
-                <p class="font-semibold text-slate-200">Supported File Formats & Parsers:</p>
+                <p class="font-semibold text-slate-200">How to use this app for Downstream LLMs & RAG:</p>
                 <div class="bg-slate-950 border border-slate-800 p-4 rounded-2xl space-y-2">
                     <ul class="list-disc pl-4 space-y-1.5 text-slate-400">
-                        <li><strong>Images (PNG, JPG, WEBP, BMP, TIFF, GIF):</strong> Processed via Tesseract.js OCR.</li>
-                        <li><strong>PDF Documents (.pdf):</strong> Automatically rendered page-by-page into high-res images for per-page OCR.</li>
-                        <li><strong>Excel Spreadsheets (.xlsx, .xls):</strong> Instantly parsed table-by-table into clean formatted text.</li>
-                        <li><strong>CSV Files (.csv):</strong> Parsed and formatted into structured tabular text.</li>
-                        <li><strong>Text & Markdown (.txt, .md):</strong> Direct text extraction with zero overhead.</li>
-                        <li><strong>IndexedDB Persistence:</strong> Powered by Dexie.js so your work never vanishes and apps never freeze.</li>
-                        <li><strong>Downstream JSONC:</strong> Export or preview structured JSON with comments for RAG and downstream modules.</li>
+                        <li><strong>LLM Schema & Prompt Injector:</strong> Click "LLM Schema & Prompt" in the top bar to define your custom system prompt and JSON schema. These are automatically packaged into your `.jsonc` exports.</li>
+                        <li><strong>Token Estimation:</strong> Monitor total approximate token usage in real-time in the left sidebar to stay well within LLM context window limits (e.g. 8k, 32k, 128k).</li>
+                        <li><strong>Multi-Format Ingestion:</strong> Ingest images, PDFs, CSV, Excel, TXT, and Markdown files with zero server calls.</li>
+                        <li><strong>IndexedDB Persistence:</strong> Work survives page refreshes and never freezes your browser.</li>
                     </ul>
                 </div>
             </div>
@@ -433,6 +496,7 @@
         document.addEventListener('DOMContentLoaded', async () => {
             refreshIcons();
             await updateDbCountBadge();
+            updateTokenEstimate();
         });
 
         async function updateDbCountBadge() {
@@ -450,6 +514,18 @@
                     lucide.createIcons();
                 } catch(e) {}
             }
+        }
+
+        // Token Estimator (approx 1 token per 4 chars or words * 1.3)
+        function updateTokenEstimate() {
+            let totalWords = 0;
+            fileQueue.forEach(item => {
+                if (item.text) {
+                    totalWords += item.text.split(/\s+/).filter(Boolean).length;
+                }
+            });
+            const estTokens = Math.round(totalWords * 1.3);
+            document.getElementById('queueTokenEstimate').textContent = `${estTokens.toLocaleString()} tokens`;
         }
 
         // Delayed Spinner Management
@@ -757,6 +833,7 @@
             } finally {
                 hideLoadingSpinner();
                 await updateDbCountBadge();
+                updateTokenEstimate();
             }
 
             if (addedCount > 0) {
@@ -816,6 +893,7 @@
             } finally {
                 hideLoadingSpinner();
                 await updateDbCountBadge();
+                updateTokenEstimate();
             }
         }
 
@@ -841,6 +919,7 @@
             document.getElementById('queueEtaText').textContent = 'Calculating...';
             
             db.pages.clear().then(() => updateDbCountBadge());
+            updateTokenEstimate();
             showToast('Queue cleared', 'trash-2');
         }
 
@@ -942,7 +1021,6 @@
             const statusTextEl = document.getElementById('engineStatusText');
             statusTextEl.textContent = 'Processing Queue...';
             
-            // Check if any items actually need Tesseract OCR
             const needsOcr = pendingFiles.some(f => f.isOcrNeeded);
 
             try {
@@ -982,7 +1060,6 @@
                             const ret = await currentWorker.recognize(item.file);
                             item.text = ret && ret.data && ret.data.text ? ret.data.text.trim() : '';
                         }
-                        // If not OCR needed (already parsed CSV, XLSX, TXT, MD), item.text is already set!
                         
                         item.status = 'completed';
                         item.progress = 1;
@@ -1006,6 +1083,7 @@
                     updateQueueUI();
                     renderResultsGrid();
                     updateGlobalProgress();
+                    updateTokenEstimate();
                 }
 
                 if (currentWorker) {
@@ -1223,6 +1301,7 @@
                 item.text = newText;
                 await db.pages.update(item.id, { text: newText });
                 renderResultsGrid();
+                updateTokenEstimate();
             }
         }
 
@@ -1343,23 +1422,45 @@
             showToast('JSON export downloaded', 'code');
         }
 
-        // Generate JSONC string
+        // Save LLM Schema & Prompt Config
+        function saveSchemaConfig() {
+            showToast('LLM prompt & JSON schema saved for JSONC exports', 'check-circle');
+            toggleModal('schemaConfigModal', false);
+        }
+
+        // Generate JSONC string with injected LLM Schema & Prompt
         function generateJsoncString() {
             const completedItems = fileQueue.filter(f => f.status === 'completed');
+            const systemPrompt = document.getElementById('configSystemPrompt').value.trim();
+            const jsonSchemaText = document.getElementById('configJsonSchema').value.trim();
+            
+            let parsedSchema = {};
+            try {
+                parsedSchema = JSON.parse(jsonSchemaText);
+            } catch(e) {
+                parsedSchema = { rawSchemaString: jsonSchemaText };
+            }
+
             let jsonc = `{\n`;
             jsonc += `  // ====================================================================\n`;
-            jsonc += `  // BULK DOCUMENT STUDIO - JSON WITH COMMENTS (JSONC) EXPORT\n`;
-            jsonc += `  // Optimized for downstream integration modules and RAG ingestion\n`;
+            jsonc += `  // BULK DOCUMENT STUDIO - LLM PIPELINE JSONC EXPORT\n`;
+            jsonc += `  // Packaged with System Prompt & Target JSON Schema for Downstream LLMs\n`;
             jsonc += `  // Generated: ${new Date().toLocaleString()}\n`;
-            jsonc += `  // Total Successfully Processed Items: ${completedItems.length}\n`;
             jsonc += `  // ====================================================================\n\n`;
             jsonc += `  "metadata": {\n`;
-            jsonc += `    "app": "Bulk OCR & Document Studio",\n`;
-            jsonc += `    "version": "v1.3.0",\n`;
+            jsonc += `    "app": "Bulk OCR & LLM Pipeline Studio",\n`;
+            jsonc += `    "version": "v1.4.0",\n`;
             jsonc += `    "exportTimestamp": "${new Date().toISOString()}",\n`;
             jsonc += `    "totalItems": ${fileQueue.length},\n`;
             jsonc += `    "completedItems": ${completedItems.length}\n`;
             jsonc += `  },\n\n`;
+            
+            // Inject LLM Prompt and Schema as requested by user context
+            jsonc += `  // Downstream LLM Extraction Instructions\n`;
+            jsonc += `  "llmPrompt": ${JSON.stringify(systemPrompt)},\n\n`;
+            jsonc += `  // Target JSON Schema for LLM Structured Output validation\n`;
+            jsonc += `  "jsonSchema": ${JSON.stringify(parsedSchema, null, 2)},\n\n`;
+
             jsonc += `  "documents": [\n`;
 
             completedItems.forEach((item, idx) => {
@@ -1415,12 +1516,12 @@
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `bulk_docs_data_${new Date().toISOString().slice(0,10)}.jsonc`;
+            a.download = `llm_pipeline_data_${new Date().toISOString().slice(0,10)}.jsonc`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
-            showToast('JSONC (JSON with comments) downloaded', 'message-square-code');
+            showToast('LLM-ready JSONC downloaded', 'message-square-code');
             toggleModal('jsoncPreviewModal', false);
         }
 
