@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bulk OCR Studio - Client-Side Batch Optical Character Recognition</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tesseract.js CDN v5 -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <!-- PDF.js CDN v3.11.174 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <!-- JSZip CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #020617;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+    </style>
+</head>
+<body class="h-full bg-slate-950 text-slate-100 flex flex-col font-sans antialiased overflow-hidden">
+
+    <!-- Top Navigation -->
+    <header class="bg-slate-900 border-b border-slate-800 px-6 py-4 flex items-center justify-between shrink-0 shadow-xl">
+        <div class="flex items-center space-x-3">
+            <div class="bg-gradient-to-tr from-indigo-600 to-violet-600 p-2.5 rounded-2xl shadow-lg shadow-indigo-500/20 flex items-center justify-center text-white ring-1 ring-white/10">
+                <i data-lucide="scan-text" class="w-6 h-6"></i>
+            </div>
+            <div>
+                <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
+                    Bulk OCR Studio 
+                    <span class="text-[10px] tracking-wide uppercase bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-2 py-0.5 rounded-full font-semibold">100% Client-Side</span>
+                </h1>
+                <p class="text-xs text-slate-400">Batch extract text from local directories, images, and multi-page PDF documents securely in your browser</p>
+            </div>
+        </div>
+        <div class="flex items-center space-x-3">
+            <button id="helpBtn" onclick="toggleModal('helpModal', true)" class="flex items-center space-x-1.5 px-3.5 py-1.5 bg-slate-800 hover:bg-slate-750 text-slate-200 text-xs font-medium rounded-xl transition-all border border-slate-700 hover:border-slate-600 cursor-pointer shadow-sm">
+                <i data-lucide="help-circle" class="w-4 h-4 text-indigo-400"></i>
+                <span>Guide & Storage</span>
+            </button>
+            <div class="h-5 w-px bg-slate-800"></div>
+            <div class="text-xs text-slate-300 flex items-center gap-2 bg-slate-950/80 px-3.5 py-1.5 rounded-xl border border-slate-800 shadow-inner">
+                <span id="engineStatusIndicator" class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span id="engineStatusText" class="font-medium">Ready</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <div class="flex-1 flex overflow-hidden">
+        
+        <!-- Left Sidebar: Controls & File Queue -->
+        <aside class="w-96 bg-slate-900/90 border-r border-slate-800 flex flex-col shrink-0">
+            
+            <!-- Selection Area -->
+            <div class="p-4 border-b border-slate-800 space-y-3">
+                <h2 class="text-[11px] font-bold uppercase tracking-wider text-slate-400">1. Select Input Source</h2>
+                
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="document.getElementById('folderInput').click()" class="flex flex-col items-center justify-center p-3.5 bg-slate-850 hover:bg-slate-800 border border-slate-700/80 hover:border-indigo-500/50 rounded-2xl transition-all group text-center cursor-pointer shadow-sm">
+                        <i data-lucide="folder-open" class="w-5 h-5 text-indigo-400 mb-1.5 group-hover:scale-110 transition-transform"></i>
+                        <span class="text-xs font-semibold text-slate-200">Select Folder</span>
+                        <span class="text-[10px] text-slate-400 mt-0.5">Images & PDFs</span>
+                    </button>
+                    <button onclick="document.getElementById('fileInput').click()" class="flex flex-col items-center justify-center p-3.5 bg-slate-850 hover:bg-slate-800 border border-slate-700/80 hover:border-indigo-500/50 rounded-2xl transition-all group text-center cursor-pointer">
+                        <i data-lucide="files" class="w-5 h-5 text-indigo-400 mb-1.5 group-hover:scale-110 transition-transform"></i>
+                        <span class="text-xs font-semibold text-slate-200">Select Files</span>
+                        <span class="text-[10px] text-slate-400 mt-0.5">Images or PDFs</span>
+                    </button>
+                </div>
+
+                <!-- Hidden inputs -->
+                <input type="file" id="folderInput" webkitdirectory directory multiple class="hidden" onchange="handleFileSelection(event)">
+                <input type="file" id="fileInput" multiple accept="image/*,.pdf" class="hidden" onchange="handleFileSelection(event)">
+
+                <!-- Drag & Drop Zone -->
+                <div id="dropZone" class="border-2 border-dashed border-slate-700 hover:border-indigo-500 rounded-2xl p-4 text-center transition-all bg-slate-950/40 hover:bg-slate-950/70 cursor-pointer group"
+                     ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" onclick="document.getElementById('fileInput').click()">
+                    <div class="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center mx-auto mb-2 text-indigo-400 group-hover:scale-105 transition-transform shadow-inner">
+                        <i data-lucide="upload-cloud" class="w-5 h-5"></i>
+                    </div>
+                    <p class="text-xs text-slate-200 font-semibold">Drag & drop files or folders here</p>
+                    <p class="text-[10px] text-slate-400 mt-0.5">Supports PNG, JPG, WEBP, PDF (multi-page)</p>
+                </div>
+            </div>
+
+            <!-- Settings Area -->
+            <div class="p-4 border-b border-slate-800 space-y-3">
+                <h2 class="text-[11px] font-bold uppercase tracking-wider text-slate-400">2. OCR Settings</h2>
+                
+                <div class="space-y-1.5">
+                    <label class="text-xs text-slate-300 font-medium flex justify-between">
+                        <span>Language</span>
+                        <span class="text-[10px] text-slate-400">Tesseract Data</span>
+                    </label>
+                    <select id="ocrLang" class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors shadow-inner">
+                        <option value="eng">English (eng)</option>
+                        <option value="spa">Spanish (spa)</option>
+                        <option value="fra">French (fra)</option>
+                        <option value="deu">German (deu)</option>
+                        <option value="ita">Italian (ita)</option>
+                        <option value="por">Portuguese (por)</option>
+                        <option value="rus">Russian (rus)</option>
+                        <option value="jpn">Japanese (jpn)</option>
+                        <option value="chi_sim">Chinese Simplified (chi_sim)</option>
+                        <option value="kor">Korean (kor)</option>
+                        <option value="ara">Arabic (ara)</option>
+                        <option value="hin">Hindi (hin)</option>
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2 pt-1">
+                    <button id="startBtn" onclick="startBatchOCR()" disabled class="flex items-center justify-center space-x-1.5 py-2.5 px-3 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 disabled:text-slate-600 text-white font-semibold text-xs rounded-xl transition-all shadow-md shadow-indigo-600/20 cursor-pointer disabled:cursor-not-allowed">
+                        <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i>
+                        <span id="startBtnText">Start OCR</span>
+                    </button>
+                    <button id="pauseBtn" onclick="pauseBatchOCR()" disabled class="flex items-center justify-center space-x-1.5 py-2.5 px-3 bg-slate-800 hover:bg-slate-750 disabled:bg-slate-850 disabled:text-slate-600 text-slate-200 font-semibold text-xs rounded-xl transition-colors border border-slate-700 cursor-pointer disabled:cursor-not-allowed shadow-sm">
+                        <i data-lucide="pause" class="w-3.5 h-3.5"></i>
+                        <span>Pause</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Queue & Stats Header -->
+            <div class="px-4 py-3 bg-slate-850 flex items-center justify-between border-b border-slate-800">
+                <div class="flex items-center space-x-2">
+                    <h2 class="text-[11px] font-bold uppercase tracking-wider text-slate-300">Queue Items</h2>
+                    <span id="fileCountBadge" class="bg-indigo-500/20 text-indigo-300 text-[10px] px-2 py-0.5 rounded-full font-bold">0 pages</span>
+                </div>
+                <button onclick="clearQueue()" class="text-slate-400 hover:text-red-400 text-xs transition-colors flex items-center gap-1 cursor-pointer font-medium">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                    <span>Clear</span>
+                </button>
+            </div>
+
+            <!-- File Queue List -->
+            <div id="fileQueueList" class="flex-1 overflow-y-auto divide-y divide-slate-800/60 p-2 space-y-1">
+                <div class="text-center py-16 text-slate-500">
+                    <div class="w-12 h-12 rounded-2xl bg-slate-850 border border-slate-800 flex items-center justify-center mx-auto mb-3 text-slate-600 shadow-inner">
+                        <i data-lucide="inbox" class="w-6 h-6"></i>
+                    </div>
+                    <p class="text-xs font-semibold text-slate-400">No items selected</p>
+                    <p class="text-[10px] text-slate-500 mt-1 max-w-[200px] mx-auto">Select files, folders, or multi-page PDFs to begin batch processing</p>
+                </div>
+            </div>
+
+            <!-- Queue Summary Footer -->
+            <div class="p-3 bg-slate-950 border-t border-slate-800 text-xs text-slate-400 flex flex-col space-y-1.5 shadow-inner">
+                <div class="flex items-center justify-between">
+                    <span id="queueProgressText" class="font-medium text-slate-300">Progress: 0 / 0 pages</span>
+                    <span id="queueTimeText" class="font-mono text-slate-400">Elapsed: 0s</span>
+                </div>
+                <div class="flex items-center justify-between text-indigo-400 font-semibold bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-1.5 rounded-xl">
+                    <span class="flex items-center gap-1.5"><i data-lucide="timer" class="w-3.5 h-3.5"></i> Est. Remaining:</span>
+                    <span id="queueEtaText" class="font-mono">Calculating...</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Right Main Content Area -->
+        <main class="flex-1 flex flex-col bg-slate-950 overflow-hidden">
+            
+            <!-- Global Progress Bar -->
+            <div id="progressBarContainer" class="hidden bg-slate-900 border-b border-slate-800 px-6 py-3 flex items-center gap-4 shrink-0 shadow-md">
+                <div class="flex-1">
+                    <div class="flex justify-between text-xs mb-1.5 font-medium">
+                        <span id="currentProcessingLabel" class="text-indigo-400 truncate">Processing...</span>
+                        <span id="progressPercentage" class="text-slate-300 font-mono">0%</span>
+                    </div>
+                    <div class="w-full bg-slate-950 rounded-full h-2.5 overflow-hidden border border-slate-800 p-0.5 shadow-inner">
+                        <div id="progressBarFill" class="bg-gradient-to-r from-indigo-500 to-violet-500 h-full rounded-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                </div>
+                <button onclick="stopBatchOCR()" class="px-3.5 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded-xl text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer shadow-sm">
+                    <i data-lucide="square" class="w-3.5 h-3.5 fill-current"></i>
+                    <span>Stop</span>
+                </button>
+            </div>
+
+            <!-- Toolbar & Export Actions -->
+            <div class="bg-slate-900/60 border-b border-slate-800 px-6 py-3 flex items-center justify-between shrink-0">
+                <div class="flex items-center space-x-3">
+                    <div class="relative">
+                        <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+                        <input type="text" id="searchInput" oninput="filterResults()" placeholder="Search extracted text..." class="bg-slate-950 border border-slate-750 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 w-72 shadow-inner transition-colors">
+                    </div>
+                    <span id="resultsCount" class="text-xs font-medium text-slate-400">Showing 0 results</span>
+                </div>
+                
+                <div class="flex items-center space-x-2.5">
+                    <button onclick="exportAllAsZip()" id="exportZipBtn" disabled class="flex items-center space-x-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-900 disabled:text-slate-600 text-white text-xs font-semibold rounded-xl transition-all shadow-sm cursor-pointer disabled:cursor-not-allowed">
+                        <i data-lucide="file-archive" class="w-4 h-4"></i>
+                        <span>Export All (.ZIP)</span>
+                    </button>
+                    <button onclick="exportAllAsSingleTxt()" id="exportTxtBtn" disabled class="flex items-center space-x-1.5 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-950 disabled:text-slate-600 text-slate-200 text-xs font-semibold rounded-xl transition-colors border border-slate-750 cursor-pointer disabled:cursor-not-allowed shadow-sm">
+                        <i data-lucide="file-text" class="w-4 h-4 text-indigo-400"></i>
+                        <span>Export Merged TXT</span>
+                    </button>
+                    <button onclick="exportAsJson()" id="exportJsonBtn" disabled class="flex items-center space-x-1.5 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-950 disabled:text-slate-600 text-slate-200 text-xs font-semibold rounded-xl transition-colors border border-slate-750 cursor-pointer disabled:cursor-not-allowed shadow-sm">
+                        <i data-lucide="code" class="w-4 h-4 text-emerald-400"></i>
+                        <span>Export JSON</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Workspace Split View (Preview & Results) -->
+            <div class="flex-1 flex overflow-hidden">
+                
+                <!-- Results Grid / List View -->
+                <div class="flex-1 flex flex-col overflow-hidden border-r border-slate-850">
+                    <div id="resultsContainer" class="flex-1 overflow-y-auto p-6 grid grid-cols-1 xl:grid-cols-2 gap-4 auto-rows-max">
+                        <div class="col-span-full flex flex-col items-center justify-center py-28 text-slate-600">
+                            <div class="w-16 h-16 rounded-3xl bg-slate-900 border border-slate-800 flex items-center justify-center mb-4 text-slate-600 shadow-inner">
+                                <i data-lucide="file-search" class="w-8 h-8"></i>
+                            </div>
+                            <h3 class="text-sm font-semibold text-slate-300">No OCR Results Yet</h3>
+                            <p class="text-xs text-slate-500 mt-1 max-w-sm text-center">Add images or multi-page PDFs to the queue and click "Start OCR" to extract text page-by-page instantly with zero server calls.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detail / Preview Inspector Panel -->
+                <div id="inspectorPanel" class="w-[480px] bg-slate-900/90 border-l border-slate-800 flex flex-col hidden shadow-2xl">
+                    <div class="px-5 py-3.5 bg-slate-850 border-b border-slate-800 flex items-center justify-between">
+                        <h3 class="text-xs font-bold text-slate-200 flex items-center gap-2">
+                            <i data-lucide="eye" class="w-4 h-4 text-indigo-400"></i>
+                            <span id="inspectorTitle">File Inspector</span>
+                        </h3>
+                        <button onclick="closeInspector()" class="text-slate-400 hover:text-slate-200 p-1 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer">
+                            <i data-lucide="x" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="flex-1 overflow-y-auto p-5 space-y-5">
+                        <!-- Image Preview -->
+                        <div class="bg-slate-950 rounded-2xl border border-slate-800 p-3 flex items-center justify-center h-52 relative overflow-hidden group shadow-inner">
+                            <img id="inspectorImage" src="" alt="Preview" class="max-h-full max-w-full object-contain rounded-xl shadow">
+                            <div class="absolute bottom-3 right-3 bg-slate-900/90 backdrop-blur-md px-2.5 py-1 rounded-xl text-[10px] text-slate-300 font-mono border border-slate-700 shadow" id="inspectorMetaSize"></div>
+                        </div>
+
+                        <!-- Extracted Text Area -->
+                        <div class="space-y-2 flex flex-col flex-1">
+                            <div class="flex items-center justify-between">
+                                <label class="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                                    <i data-lucide="file-text" class="w-3.5 h-3.5 text-indigo-400"></i>
+                                    <span>Extracted Text (Page)</span>
+                                </label>
+                                <div class="flex items-center space-x-2">
+                                    <button onclick="copyInspectorText()" class="text-[11px] font-medium text-indigo-400 hover:text-indigo-300 flex items-center gap-1 bg-indigo-500/10 hover:bg-indigo-500/20 px-2.5 py-1 rounded-xl border border-indigo-500/20 transition-all cursor-pointer shadow-sm">
+                                        <i data-lucide="copy" class="w-3 h-3"></i>
+                                        <span>Copy</span>
+                                    </button>
+                                    <button onclick="downloadSingleTxt()" class="text-[11px] font-medium text-slate-300 hover:text-slate-100 flex items-center gap-1 bg-slate-800 hover:bg-slate-750 px-2.5 py-1 rounded-xl border border-slate-700 transition-all cursor-pointer shadow-sm">
+                                        <i data-lucide="download" class="w-3 h-3 text-indigo-400"></i>
+                                        <span>Save TXT</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <textarea id="inspectorTextarea" oninput="updateInspectorText(this.value)" class="w-full h-72 bg-slate-950 border border-slate-800 rounded-2xl p-3.5 text-xs text-slate-200 font-mono focus:outline-none focus:border-indigo-500 resize-none shadow-inner leading-relaxed"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Loading / Spinner Modal (triggers after 1s delay) -->
+    <div id="loadingModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-sm w-full p-8 shadow-2xl flex flex-col items-center text-center space-y-4 ring-1 ring-white/10">
+            <div class="w-14 h-14 rounded-2xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 animate-spin shadow-inner">
+                <i data-lucide="loader-2" class="w-7 h-7"></i>
+            </div>
+            <div>
+                <h3 id="loadingTitle" class="text-sm font-bold text-white tracking-tight">Processing Files...</h3>
+                <p id="loadingSubtitle" class="text-xs text-slate-400 mt-1.5 leading-relaxed">Please wait while we render PDF pages and prepare items.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Guide Modal -->
+    <div id="helpModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-xl w-full p-7 shadow-2xl space-y-5 ring-1 ring-white/10">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+                <h3 class="text-base font-bold text-white flex items-center gap-2.5">
+                    <div class="p-2 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
+                        <i data-lucide="info" class="w-5 h-5"></i>
+                    </div>
+                    Bulk OCR Studio Guide & Data Storage
+                </h3>
+                <button onclick="toggleModal('helpModal', false)" class="text-slate-400 hover:text-slate-200 p-1.5 rounded-xl hover:bg-slate-800 transition-colors cursor-pointer">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="space-y-3.5 text-xs text-slate-300 leading-relaxed">
+                <p class="font-semibold text-slate-200">Where are the inferred text results stored?</p>
+                <p class="text-slate-400">Because this application runs <strong>100% client-side in your browser</strong> with zero server calls, all inferred text results are stored securely in your browser's active memory (JavaScript RAM state via `fileQueue`).</p>
+                <div class="bg-slate-950 border border-slate-800 p-4 rounded-2xl space-y-2">
+                    <p class="font-semibold text-slate-200">Key Architectural Highlights:</p>
+                    <ul class="list-disc pl-4 space-y-1.5 text-slate-400">
+                        <li><strong>Per-Page Processing:</strong> Images count as 1 page, and multi-page PDFs are automatically split and rendered page-by-page.</li>
+                        <li><strong>Live Inspection & Editing:</strong> Click any item in the grid to inspect the original page side-by-side with the inferred text and make manual edits instantly.</li>
+                        <li><strong>Permanent Exports:</strong> Export anytime as a `.zip` archive containing individual `.txt` files + a merged summary, a single merged `.txt`, or structured JSON.</li>
+                        <li><strong>Privacy & Safety:</strong> Nothing leaves your computer. Closing or refreshing your browser tab clears active memory.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="pt-3 border-t border-slate-800 flex justify-end">
+                <button onclick="toggleModal('helpModal', false)" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-xl transition-all shadow-md shadow-indigo-600/20 cursor-pointer">
+                    Got it, let's start
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-6 right-6 bg-slate-900 border border-slate-800 text-slate-200 px-4.5 py-3 rounded-2xl shadow-2xl flex items-center space-x-3 transform translate-y-20 opacity-0 transition-all duration-300 z-50 ring-1 ring-white/10">
+        <i id="toastIcon" data-lucide="check-circle" class="w-5 h-5 text-emerald-400 shrink-0"></i>
+        <span id="toastMessage" class="text-xs font-semibold">Notification message</span>
+    </div>
+
+    <!-- Application Script Logic -->
+    <script>
+        // Configure PDF.js worker
+        if (typeof pdfjsLib !== 'undefined') {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        }
+
+        // State management
+        let fileQueue = [];
+        let isProcessing = false;
+        let isPaused = false;
+        let shouldStop = false;
+        let activeInspectorId = null;
+        let currentWorker = null;
+        let startTime = 0;
+        let timerInterval = null;
+
+        // Initialize Lucide icons on load
+        document.addEventListener('DOMContentLoaded', () => {
+            refreshIcons();
+        });
+
+        function refreshIcons() {
+            if (typeof lucide !== 'undefined') {
+                try {
+                    lucide.createIcons();
+                } catch(e) {}
+            }
+        }
+
+        // Delayed Spinner Management
+        let spinnerTimeout = null;
+        function showLoadingSpinner(title = 'Processing...', subtitle = 'Please wait while we render PDF pages and prepare items.') {
+            if (spinnerTimeout) clearTimeout(spinnerTimeout);
+            spinnerTimeout = setTimeout(() => {
+                document.getElementById('loadingTitle').textContent = title;
+                document.getElementById('loadingSubtitle').textContent = subtitle;
+                const modal = document.getElementById('loadingModal');
+                modal.classList.add('flex');
+                modal.classList.remove('hidden');
+                refreshIcons();
+            }, 1000); // 1 second threshold
+        }
+
+        function hideLoadingSpinner() {
+            if (spinnerTimeout) {
+                clearTimeout(spinnerTimeout);
+                spinnerTimeout = null;
+            }
+            const modal = document.getElementById('loadingModal');
+            modal.classList.remove('flex');
+            modal.classList.add('hidden');
+        }
+
+        // Drag & Drop Handlers
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            document.getElementById('dropZone').classList.add('border-indigo-500', 'bg-slate-900');
+        }
+
+        function handleDragLeave(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            document.getElementById('dropZone').classList.remove('border-indigo-500', 'bg-slate-900');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            document.getElementById('dropZone').classList.remove('border-indigo-500', 'bg-slate-900');
+            
+            const items = e.dataTransfer.items;
+            if (items && items.length > 0 && typeof items[0].webkitGetAsEntry === 'function') {
+                const files = [];
+                for (let i = 0; i < items.length; i++) {
+                    const entry = items[i].webkitGetAsEntry();
+                    if (entry) {
+                        traverseFileTree(entry, files);
+                    }
+                }
+                setTimeout(() => processIncomingFiles(files), 250);
+            } else {
+                const files = e.dataTransfer.files;
+                if (files) {
+                    processIncomingFiles(Array.from(files));
+                }
+            }
+        }
+
+        async function traverseFileTree(item, filesArray) {
+            if (item.isFile) {
+                item.file(file => {
+                    if (isSupportedFile(file)) {
+                        filesArray.push(file);
+                        updateQueueUI();
+                    }
+                });
+            } else if (item.isDirectory) {
+                const dirReader = item.createReader();
+                const readEntries = () => {
+                    dirReader.readEntries(entries => {
+                        if (entries.length > 0) {
+                            for (let i = 0; i < entries.length; i++) {
+                                traverseFileTree(entries[i], filesArray);
+                            }
+                            readEntries();
+                        }
+                    }, err => console.error(err));
+                };
+                readEntries();
+            }
+        }
+
+        function isSupportedFile(file) {
+            const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/bmp', 'image/tiff', 'image/gif', 'application/pdf'];
+            return validTypes.includes(file.type) || /\.(png|jpe?g|webp|bmp|tiff|gif|pdf)$/i.test(file.name);
+        }
+
+        function handleFileSelection(e) {
+            const rawFiles = Array.from(e.target.files);
+            const validFiles = rawFiles.filter(isSupportedFile);
+            processIncomingFiles(validFiles);
+            e.target.value = '';
+        }
+
+        async function processIncomingFiles(files) {
+            let addedCount = 0;
+            showLoadingSpinner('Parsing Input Files', 'Reading directories and splitting multi-page PDFs into page images...');
+
+            try {
+                for (const file of files) {
+                    if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+                        try {
+                            const arrayBuffer = await file.arrayBuffer();
+                            const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+                            const pdfDoc = await loadingTask.promise;
+                            
+                            for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
+                                const page = await pdfDoc.getPage(pageNum);
+                                const viewport = page.getViewport({ scale: 2.0 });
+                                const canvas = document.createElement('canvas');
+                                const context = canvas.getContext('2d');
+                                canvas.width = viewport.width;
+                                canvas.height = viewport.height;
+
+                                await page.render({ canvasContext: context, viewport: viewport }).promise;
+
+                                const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+                                const pageFile = new File([blob], `${file.name}_page_${pageNum}.png`, { type: 'image/png' });
+
+                                const exists = fileQueue.some(f => f.name === `${file.name} (p. ${pageNum})`);
+                                if (!exists) {
+                                    const id = 'file_' + Math.random().toString(36).substring(2, 9);
+                                    const previewUrl = URL.createObjectURL(pageFile);
+                                    fileQueue.push({
+                                        id,
+                                        file: pageFile,
+                                        name: `${file.name} (p. ${pageNum})`,
+                                        path: pageFile.name,
+                                        size: pageFile.size,
+                                        type: pageFile.type,
+                                        status: 'pending',
+                                        progress: 0,
+                                        text: '',
+                                        error: null,
+                                        previewUrl
+                                    });
+                                    addedCount++;
+                                }
+                            }
+                        } catch (err) {
+                            console.error('Error parsing PDF:', err);
+                            showToast(`Failed to parse PDF: ${file.name}`, 'alert-circle');
+                        }
+                    } else {
+                        const exists = fileQueue.some(f => f.name === file.name);
+                        if (!exists) {
+                            const id = 'file_' + Math.random().toString(36).substring(2, 9);
+                            const previewUrl = URL.createObjectURL(file);
+                            fileQueue.push({
+                                id,
+                                file,
+                                name: file.name,
+                                path: file.webkitRelativePath || file.name,
+                                size: file.size,
+                                type: file.type,
+                                status: 'pending',
+                                progress: 0,
+                                text: '',
+                                error: null,
+                                previewUrl
+                            });
+                            addedCount++;
+                        }
+                    }
+                }
+            } finally {
+                hideLoadingSpinner();
+            }
+
+            if (addedCount > 0) {
+                showToast(`Added ${addedCount} pages/items to queue`, 'check-circle');
+                updateQueueUI();
+                renderResultsGrid();
+                document.getElementById('startBtn').removeAttribute('disabled');
+            }
+        }
+
+        function clearQueue() {
+            if (isProcessing) {
+                showToast('Cannot clear queue while processing', 'alert-circle');
+                return;
+            }
+            fileQueue.forEach(f => {
+                try { URL.revokeObjectURL(f.previewUrl); } catch(e) {}
+            });
+            fileQueue = [];
+            activeInspectorId = null;
+            document.getElementById('inspectorPanel').classList.add('hidden');
+            updateQueueUI();
+            renderResultsGrid();
+            document.getElementById('startBtn').setAttribute('disabled', 'true');
+            document.getElementById('exportZipBtn').setAttribute('disabled', 'true');
+            document.getElementById('exportTxtBtn').setAttribute('disabled', 'true');
+            document.getElementById('exportJsonBtn').setAttribute('disabled', 'true');
+            document.getElementById('queueEtaText').textContent = 'Calculating...';
+            showToast('Queue cleared', 'trash-2');
+        }
+
+        function updateQueueUI() {
+            const listEl = document.getElementById('fileQueueList');
+            const badgeEl = document.getElementById('fileCountBadge');
+            badgeEl.textContent = `${fileQueue.length} pages`;
+
+            if (fileQueue.length === 0) {
+                listEl.innerHTML = `
+                    <div class="text-center py-16 text-slate-500">
+                        <div class="w-12 h-12 rounded-2xl bg-slate-850 border border-slate-800 flex items-center justify-center mx-auto mb-3 text-slate-600 shadow-inner">
+                            <i data-lucide="inbox" class="w-6 h-6"></i>
+                        </div>
+                        <p class="text-xs font-semibold text-slate-400">No items selected</p>
+                        <p class="text-[10px] text-slate-500 mt-1 max-w-[200px] mx-auto">Select files, folders, or multi-page PDFs</p>
+                    </div>
+                `;
+                refreshIcons();
+                return;
+            }
+
+            let html = '';
+            fileQueue.forEach(item => {
+                let statusBadge = '';
+                if (item.status === 'pending') statusBadge = '<span class="text-[10px] text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded-md font-medium">Pending</span>';
+                else if (item.status === 'processing') statusBadge = '<span class="text-[10px] text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded-md animate-pulse font-semibold">OCR ' + Math.round(item.progress * 100) + '%</span>';
+                else if (item.status === 'completed') statusBadge = '<span class="text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-md font-semibold">Done</span>';
+                else if (item.status === 'error') statusBadge = '<span class="text-[10px] text-red-400 bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded-md font-semibold">Error</span>';
+
+                html += `
+                    <div onclick="inspectFile('${item.id}')" class="p-3 rounded-2xl hover:bg-slate-850 cursor-pointer transition-all flex items-center space-x-3 group ${activeInspectorId === item.id ? 'bg-slate-850 border border-indigo-500/50 shadow-md' : 'border border-transparent'}">
+                        <div class="w-10 h-10 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center shrink-0 overflow-hidden shadow-inner">
+                            <img src="${item.previewUrl}" class="w-full h-full object-cover">
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <h4 class="text-xs font-semibold text-slate-200 truncate group-hover:text-indigo-300 transition-colors">${item.name}</h4>
+                            <p class="text-[10px] text-slate-400 truncate mt-0.5">${formatBytes(item.size)}</p>
+                        </div>
+                        <div class="shrink-0">
+                            ${statusBadge}
+                        </div>
+                    </div>
+                `;
+            });
+            listEl.innerHTML = html;
+            refreshIcons();
+        }
+
+        function formatBytes(bytes, decimals = 2) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const dm = decimals < 0 ? 0 : decimals;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+        }
+
+        // Robust Batch OCR Engine with ETA Estimator
+        async function startBatchOCR() {
+            if (isProcessing) return;
+            const pendingFiles = fileQueue.filter(f => f.status === 'pending' || f.status === 'error');
+            if (pendingFiles.length === 0) {
+                showToast('All items have already been processed', 'info');
+                return;
+            }
+
+            isProcessing = true;
+            isPaused = false;
+            shouldStop = false;
+            startTime = Date.now();
+            
+            document.getElementById('startBtn').setAttribute('disabled', 'true');
+            document.getElementById('pauseBtn').removeAttribute('disabled');
+            document.getElementById('progressBarContainer').classList.remove('hidden');
+            
+            if (timerInterval) clearInterval(timerInterval);
+            
+            let completedCountStart = fileQueue.filter(f => f.status === 'completed').length;
+            
+            timerInterval = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                document.getElementById('queueTimeText').textContent = `Elapsed: ${elapsed}s`;
+
+                const completedNow = fileQueue.filter(f => f.status === 'completed').length;
+                const newlyCompleted = completedNow - completedCountStart;
+                const totalPending = fileQueue.length - completedNow;
+
+                if (newlyCompleted > 0 && elapsed > 2) {
+                    const avgTimePerItem = elapsed / newlyCompleted;
+                    const remainingSeconds = Math.round(totalPending * avgTimePerItem);
+                    document.getElementById('queueEtaText').textContent = formatTimeRemaining(remainingSeconds);
+                } else if (completedNow === 0) {
+                    document.getElementById('queueEtaText').textContent = 'Calculating...';
+                }
+            }, 1000);
+
+            const lang = document.getElementById('ocrLang').value;
+            const statusTextEl = document.getElementById('engineStatusText');
+            statusTextEl.textContent = 'Initializing Worker...';
+            
+            showLoadingSpinner('Initializing Tesseract OCR', 'Loading language model data for per-page processing...');
+
+            try {
+                currentWorker = await Tesseract.createWorker(lang, 1, {
+                    logger: m => {
+                        if (m && m.status) {
+                            statusTextEl.textContent = `${m.status} (${Math.round((m.progress || 0) * 100)}%)`;
+                        }
+                    }
+                });
+
+                hideLoadingSpinner();
+
+                for (let i = 0; i < fileQueue.length; i++) {
+                    if (shouldStop) break;
+                    
+                    while (isPaused) {
+                        await new Promise(r => setTimeout(r, 200));
+                        if (shouldStop) break;
+                    }
+                    if (shouldStop) break;
+
+                    const item = fileQueue[i];
+                    if (item.status === 'completed') continue;
+
+                    item.status = 'processing';
+                    item.progress = 0;
+                    updateQueueUI();
+                    renderResultsGrid();
+
+                    document.getElementById('currentProcessingLabel').textContent = `Processing Page (${i+1}/${fileQueue.length}): ${item.name}`;
+
+                    try {
+                        const ret = await currentWorker.recognize(item.file);
+                        item.text = ret && ret.data && ret.data.text ? ret.data.text.trim() : '';
+                        item.status = 'completed';
+                        item.progress = 1;
+                    } catch (err) {
+                        console.error(`OCR Error on ${item.name}:`, err);
+                        item.status = 'error';
+                        item.error = err.message || 'OCR Failed';
+                        item.text = '[OCR Extraction Failed: ' + item.error + ']';
+                    }
+
+                    updateQueueUI();
+                    renderResultsGrid();
+                    updateGlobalProgress();
+                }
+
+                await currentWorker.terminate();
+                currentWorker = null;
+            } catch (err) {
+                console.error('Tesseract Engine error:', err);
+                showToast('OCR Error: ' + (err.message || err), 'alert-circle');
+            } finally {
+                hideLoadingSpinner();
+            }
+
+            // Cleanup & Reset state
+            isProcessing = false;
+            if (timerInterval) clearInterval(timerInterval);
+            document.getElementById('startBtn').removeAttribute('disabled');
+            document.getElementById('pauseBtn').setAttribute('disabled', 'true');
+            document.getElementById('progressBarContainer').classList.add('hidden');
+            statusTextEl.textContent = 'Ready';
+            document.getElementById('queueEtaText').textContent = 'Completed';
+
+            const completedCount = fileQueue.filter(f => f.status === 'completed').length;
+            if (completedCount > 0) {
+                document.getElementById('exportZipBtn').removeAttribute('disabled');
+                document.getElementById('exportTxtBtn').removeAttribute('disabled');
+                document.getElementById('exportJsonBtn').removeAttribute('disabled');
+                showToast(`Batch OCR completed! ${completedCount} pages processed successfully.`, 'check-circle');
+            }
+        }
+
+        function formatTimeRemaining(seconds) {
+            if (seconds < 60) return `${seconds}s remaining`;
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins}m ${secs}s remaining`;
+        }
+
+        function pauseBatchOCR() {
+            isPaused = !isPaused;
+            const pauseBtn = document.getElementById('pauseBtn');
+            const statusTextEl = document.getElementById('engineStatusText');
+            if (isPaused) {
+                pauseBtn.innerHTML = '<i data-lucide="play" class="w-3.5 h-3.5"></i><span>Resume</span>';
+                statusTextEl.textContent = 'Paused';
+                showToast('OCR batch paused', 'pause');
+            } else {
+                pauseBtn.innerHTML = '<i data-lucide="pause" class="w-3.5 h-3.5"></i><span>Pause</span>';
+                statusTextEl.textContent = 'Resuming...';
+                showToast('OCR batch resumed', 'play');
+            }
+            refreshIcons();
+        }
+
+        function stopBatchOCR() {
+            shouldStop = true;
+            isPaused = false;
+            hideLoadingSpinner();
+            if (currentWorker) {
+                currentWorker.terminate().catch(() => {});
+                currentWorker = null;
+            }
+            isProcessing = false;
+            if (timerInterval) clearInterval(timerInterval);
+            document.getElementById('startBtn').removeAttribute('disabled');
+            document.getElementById('pauseBtn').setAttribute('disabled', 'true');
+            document.getElementById('progressBarContainer').classList.add('hidden');
+            document.getElementById('engineStatusText').textContent = 'Ready';
+            document.getElementById('queueEtaText').textContent = 'Stopped';
+            showToast('OCR batch stopped', 'square');
+        }
+
+        function updateGlobalProgress() {
+            const total = fileQueue.length;
+            if (total === 0) return;
+            const completed = fileQueue.filter(f => f.status === 'completed' || f.status === 'error').length;
+            
+            let totalProgressSum = 0;
+            fileQueue.forEach(f => {
+                if (f.status === 'completed') totalProgressSum += 1;
+                else if (f.status === 'processing') totalProgressSum += (f.progress || 0);
+            });
+
+            const percent = Math.round((totalProgressSum / total) * 100);
+            document.getElementById('progressPercentage').textContent = percent + '%';
+            document.getElementById('progressBarFill').style.width = percent + '%';
+            document.getElementById('queueProgressText').textContent = `Progress: ${completed} / ${total} pages`;
+        }
+
+        // Results Rendering & Inspection
+        function renderResultsGrid() {
+            const container = document.getElementById('resultsContainer');
+            const searchInput = document.getElementById('searchInput');
+            const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
+            
+            const filteredQueue = fileQueue.filter(item => {
+                if (!searchTerm) return true;
+                return item.name.toLowerCase().includes(searchTerm) || (item.text && item.text.toLowerCase().includes(searchTerm));
+            });
+
+            document.getElementById('resultsCount').textContent = `Showing ${filteredQueue.length} of ${fileQueue.length} pages`;
+
+            if (fileQueue.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full flex flex-col items-center justify-center py-28 text-slate-600">
+                        <div class="w-16 h-16 rounded-3xl bg-slate-900 border border-slate-800 flex items-center justify-center mb-4 text-slate-600 shadow-inner">
+                            <i data-lucide="file-search" class="w-8 h-8"></i>
+                        </div>
+                        <h3 class="text-sm font-semibold text-slate-300">No OCR Results Yet</h3>
+                        <p class="text-xs text-slate-500 mt-1 max-w-sm text-center">Add images or multi-page PDFs to the queue and click "Start OCR" to extract text page-by-page instantly with zero server calls.</p>
+                    </div>
+                `;
+                refreshIcons();
+                return;
+            }
+
+            if (filteredQueue.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full flex flex-col items-center justify-center py-28 text-slate-600">
+                        <div class="w-16 h-16 rounded-3xl bg-slate-900 border border-slate-800 flex items-center justify-center mb-4 text-slate-600 shadow-inner">
+                            <i data-lucide="search-x" class="w-8 h-8"></i>
+                        </div>
+                        <h3 class="text-sm font-semibold text-slate-300">No matching pages found</h3>
+                        <p class="text-xs text-slate-500 mt-1">Try adjusting your search query</p>
+                    </div>
+                `;
+                refreshIcons();
+                return;
+            }
+
+            let html = '';
+            filteredQueue.forEach(item => {
+                let statusBadge = '';
+                if (item.status === 'pending') statusBadge = '<span class="text-[10px] text-slate-400 bg-slate-800 px-2 py-0.5 rounded-full font-medium">Pending</span>';
+                else if (item.status === 'processing') statusBadge = `<span class="text-[10px] text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-0.5 rounded-full font-semibold animate-pulse">Processing ${Math.round((item.progress || 0) * 100)}%</span>`;
+                else if (item.status === 'completed') statusBadge = '<span class="text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full font-semibold">Completed</span>';
+                else if (item.status === 'error') statusBadge = '<span class="text-[10px] text-red-400 bg-red-500/10 border border-red-500/20 px-2.5 py-0.5 rounded-full font-semibold">Error</span>';
+
+                const displayText = item.text ? escapeHtml(item.text) : '<span class="text-slate-600 italic">No text extracted yet...</span>';
+
+                html += `
+                    <div onclick="inspectFile('${item.id}')" class="bg-slate-900 border ${activeInspectorId === item.id ? 'border-indigo-500 shadow-xl shadow-indigo-500/10 ring-1 ring-indigo-500/30' : 'border-slate-800 hover:border-slate-700'} rounded-3xl p-5 flex flex-col transition-all cursor-pointer group shadow-md">
+                        <div class="flex items-center justify-between mb-3.5">
+                            <div class="flex items-center space-x-3 min-w-0">
+                                <div class="w-10 h-10 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-center shrink-0 overflow-hidden shadow-inner">
+                                    <img src="${item.previewUrl}" class="w-full h-full object-cover">
+                                </div>
+                                <div class="min-w-0">
+                                    <h4 class="text-xs font-bold text-slate-200 truncate group-hover:text-indigo-300 transition-colors">${item.name}</h4>
+                                    <p class="text-[10px] text-slate-400 mt-0.5 font-mono">${formatBytes(item.size)}</p>
+                                </div>
+                            </div>
+                            <div class="shrink-0">
+                                ${statusBadge}
+                            </div>
+                        </div>
+                        <div class="flex-1 bg-slate-950 border border-slate-850 rounded-2xl p-3.5 font-mono text-xs text-slate-300 h-36 overflow-y-auto select-text whitespace-pre-wrap shadow-inner leading-relaxed">${displayText}</div>
+                        <div class="mt-4 flex items-center justify-between pt-3 border-t border-slate-800/80 text-[11px] text-slate-400">
+                            <span class="font-medium">${item.text ? item.text.split(/\s+/).filter(Boolean).length + ' words' : '0 words'}</span>
+                            <span class="text-indigo-400 font-semibold group-hover:translate-x-0.5 transition-transform flex items-center gap-1">Inspect Page <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i></span>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+            refreshIcons();
+        }
+
+        function filterResults() {
+            renderResultsGrid();
+        }
+
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+        }
+
+        // Inspector Panel Actions
+        function inspectFile(id) {
+            activeInspectorId = id;
+            const item = fileQueue.find(f => f.id === id);
+            if (!item) return;
+
+            document.getElementById('inspectorPanel').classList.remove('hidden');
+            document.getElementById('inspectorTitle').textContent = item.name;
+            document.getElementById('inspectorImage').src = item.previewUrl;
+            document.getElementById('inspectorMetaSize').textContent = `${formatBytes(item.size)}`;
+            document.getElementById('inspectorTextarea').value = item.text || '';
+
+            updateQueueUI();
+            renderResultsGrid();
+        }
+
+        function closeInspector() {
+            activeInspectorId = null;
+            document.getElementById('inspectorPanel').classList.add('hidden');
+            updateQueueUI();
+            renderResultsGrid();
+        }
+
+        function updateInspectorText(newText) {
+            if (!activeInspectorId) return;
+            const item = fileQueue.find(f => f.id === activeInspectorId);
+            if (item) {
+                item.text = newText;
+                renderResultsGrid();
+            }
+        }
+
+        function copyInspectorText() {
+            const textarea = document.getElementById('inspectorTextarea');
+            textarea.select();
+            navigator.clipboard.writeText(textarea.value);
+            showToast('Extracted text copied to clipboard', 'copy');
+        }
+
+        function downloadSingleTxt() {
+            if (!activeInspectorId) return;
+            const item = fileQueue.find(f => f.id === activeInspectorId);
+            if (!item) return;
+
+            const blob = new Blob([item.text || ''], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${item.name.replace(/\.[^/.]+$/, '')}_ocr.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast('Downloaded text file', 'download');
+        }
+
+        // Export Functions
+        async function exportAllAsZip() {
+            const completedItems = fileQueue.filter(f => f.status === 'completed');
+            if (completedItems.length === 0) {
+                showToast('No completed OCR results to export', 'alert-circle');
+                return;
+            }
+
+            showLoadingSpinner('Generating ZIP Archive', 'Compressing page text files into ZIP...');
+            try {
+                const zip = new JSZip();
+                const folderName = 'bulk_ocr_results_' + new Date().toISOString().slice(0,10);
+                const resultsFolder = zip.folder(folderName);
+
+                completedItems.forEach(item => {
+                    const baseName = item.name.replace(/\.[^/.]+$/, '');
+                    resultsFolder.file(`${baseName}.txt`, item.text || '');
+                });
+
+                let mergedContent = '';
+                completedItems.forEach((item, idx) => {
+                    mergedContent += `=== PAGE ${idx+1}: ${item.name} ===\n\n${item.text || ''}\n\n\n`;
+                });
+                resultsFolder.file('_merged_all_ocr.txt', mergedContent);
+
+                const content = await zip.generateAsync({ type: 'blob' });
+                const url = URL.createObjectURL(content);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${folderName}.zip`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+                showToast('ZIP archive downloaded successfully', 'check-circle');
+            } catch (err) {
+                console.error(err);
+                showToast('Failed to generate ZIP archive', 'alert-circle');
+            } finally {
+                hideLoadingSpinner();
+            }
+        }
+
+        function exportAllAsSingleTxt() {
+            const completedItems = fileQueue.filter(f => f.status === 'completed');
+            if (completedItems.length === 0) {
+                showToast('No completed OCR results to export', 'alert-circle');
+                return;
+            }
+
+            let mergedContent = `# BULK OCR STUDIO - MERGED EXPORT\n# Generated: ${new Date().toLocaleString()}\n# Total Pages: ${completedItems.length}\n\n`;
+            completedItems.forEach((item, idx) => {
+                mergedContent += `==================================================\n`;
+                mergedContent += `PAGE [${idx + 1}]: ${item.name}\n`;
+                mergedContent += `==================================================\n\n`;
+                mergedContent += `${item.text || ''}\n\n\n`;
+            });
+
+            const blob = new Blob([mergedContent], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `bulk_ocr_merged_${new Date().toISOString().slice(0,10)}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast('Merged text file downloaded', 'download');
+        }
+
+        function exportAsJson() {
+            const data = fileQueue.map(f => ({
+                name: f.name,
+                size: f.size,
+                type: f.type,
+                status: f.status,
+                text: f.text || '',
+                error: f.error || null
+            }));
+
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `bulk_ocr_data_${new Date().toISOString().slice(0,10)}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast('JSON export downloaded', 'code');
+        }
+
+        // Modal & Toast Helpers
+        function toggleModal(modalId, show) {
+            const modal = document.getElementById(modalId);
+            if (show) {
+                modal.classList.add('flex');
+                modal.classList.remove('hidden');
+            } else {
+                modal.classList.remove('flex');
+                modal.classList.add('hidden');
+            }
+        }
+
+        function showToast(message, iconName = 'check-circle') {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toastMessage');
+            const toastIcon = document.getElementById('toastIcon');
+
+            toastMessage.textContent = message;
+            toastIcon.setAttribute('data-lucide', iconName);
+            refreshIcons();
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3500);
+        }
+    </script>
+</body>
+</html>
