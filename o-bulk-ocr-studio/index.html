@@ -681,7 +681,11 @@
                     if (ext === 'pdf' || file.type === 'application/pdf') {
                         try {
                             const arrayBuffer = await file.arrayBuffer();
-                            const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+                            const isFileProtocol = window.location.protocol === 'file:';
+                            const loadingTask = pdfjsLib.getDocument({ 
+                                data: arrayBuffer,
+                                disableWorker: isFileProtocol
+                            });
                             const pdfDoc = await loadingTask.promise;
                             
                             for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
@@ -1107,15 +1111,21 @@
             try {
                 if (needsOcr) {
                     showLoadingSpinner('Initializing Tesseract OCR', 'Loading language model data...');
-                    currentWorker = await Tesseract.createWorker(lang, 1, {
-                        workerPath: './vendor/worker.min.js',
+                    const isFileProtocol = window.location.protocol === 'file:';
+                    const tesseractOpts = {
                         langPath: './vendor/langs',
                         logger: m => {
                             if (m && m.status) {
                                 statusTextEl.textContent = `${m.status} (${Math.round((m.progress || 0) * 100)}%)`;
                             }
                         }
-                    });
+                    };
+                    if (isFileProtocol) {
+                        tesseractOpts.workerBlobURL = false;
+                    } else {
+                        tesseractOpts.workerPath = './vendor/worker.min.js';
+                    }
+                    currentWorker = await Tesseract.createWorker(lang, 1, tesseractOpts);
                     hideLoadingSpinner();
                 }
 
