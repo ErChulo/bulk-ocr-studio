@@ -101,6 +101,10 @@
                 <i data-lucide="code-2" class="w-4 h-4"></i>
                 <span>Preview JSONC</span>
             </button>
+            <button id="pbgcPiiScanBtn" onclick="openPbgcPiiModal()" class="inline-flex items-center justify-center space-x-2 px-4 py-2.5 bg-red-600/20 hover:bg-red-600/30 text-red-300 text-xs font-semibold rounded-xl transition-all border border-red-500/40 hover:border-red-500 cursor-pointer shadow-sm">
+                <i data-lucide="shield-alert" class="w-4 h-4 text-red-400"></i>
+                <span>PBGC PII Detector (<span id="piiCountBadge">0</span>)</span>
+            </button>
             <button id="helpBtn" onclick="toggleModal('helpModal', true)" class="inline-flex items-center justify-center space-x-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-750 text-slate-200 text-xs font-semibold rounded-xl transition-all border border-slate-700 hover:border-slate-600 cursor-pointer shadow-sm">
                 <i data-lucide="help-circle" class="w-4 h-4 text-indigo-400"></i>
                 <span>Guide</span>
@@ -437,6 +441,88 @@
         </div>
     </div>
 
+    
+    <!-- PBGC PII Detection & Redaction Modal (IM 05-09 & IM 10-03 Compliant) -->
+    <div id="pbgcPiiModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-4xl w-full p-7 shadow-2xl space-y-5 ring-1 ring-white/15 flex flex-col max-h-[90vh]">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-4 shrink-0">
+                <h3 class="text-base font-bold text-white flex items-center gap-2.5">
+                    <div class="p-2 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400">
+                        <i data-lucide="shield-alert" class="w-5 h-5"></i>
+                    </div>
+                    PBGC PII Detector & Redaction Studio (IM 05-09 / IM 10-03)
+                </h3>
+                <button onclick="toggleModal('pbgcPiiModal', false)" class="inline-flex items-center justify-center text-slate-400 hover:text-slate-200 p-1.5 rounded-xl hover:bg-slate-800 cursor-pointer">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto space-y-4 text-xs text-slate-300 pr-1">
+                <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 flex items-center justify-between shadow-inner">
+                    <div>
+                        <h4 class="font-bold text-white">Document Corpus PII Scan Summary</h4>
+                        <p class="text-slate-400 mt-0.5 text-[11px]">Scans extracted document text for SSN, EIN, bank accounts, DOB, contact data, and credentials under PBGC privacy directives.</p>
+                    </div>
+                    <button onclick="runPbgcPiiScan()" class="px-4 py-2 bg-red-600 hover:bg-red-500 text-white font-semibold text-xs rounded-xl transition-all shadow-md cursor-pointer">
+                        Run Full Scan
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-4 gap-3">
+                    <div class="bg-slate-950 border border-slate-800 p-3.5 rounded-2xl text-center shadow-inner">
+                        <div class="text-[10px] text-slate-400 uppercase font-semibold">Total Findings</div>
+                        <div id="piiStatTotal" class="text-lg font-bold text-white font-mono mt-1">0</div>
+                    </div>
+                    <div class="bg-slate-950 border border-slate-800 p-3.5 rounded-2xl text-center shadow-inner">
+                        <div class="text-[10px] text-red-400 uppercase font-semibold">Critical / High</div>
+                        <div id="piiStatCritical" class="text-lg font-bold text-red-400 font-mono mt-1">0</div>
+                    </div>
+                    <div class="bg-slate-950 border border-slate-800 p-3.5 rounded-2xl text-center shadow-inner">
+                        <div class="text-[10px] text-amber-400 uppercase font-semibold">Marked for Redaction</div>
+                        <div id="piiStatRedact" class="text-lg font-bold text-amber-400 font-mono mt-1">0</div>
+                    </div>
+                    <div class="bg-slate-950 border border-slate-800 p-3.5 rounded-2xl text-center shadow-inner">
+                        <div class="text-[10px] text-emerald-400 uppercase font-semibold">False Positives</div>
+                        <div id="piiStatFP" class="text-lg font-bold text-emerald-400 font-mono mt-1">0</div>
+                    </div>
+                </div>
+
+                <!-- Findings Table -->
+                <div class="border border-slate-800 rounded-2xl overflow-hidden bg-slate-950 shadow-inner">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-900 border-b border-slate-800 text-slate-400 font-semibold uppercase text-[10px]">
+                            <tr>
+                                <th class="p-3">File</th>
+                                <th class="p-3">Type</th>
+                                <th class="p-3">Severity</th>
+                                <th class="p-3">Masked Match</th>
+                                <th class="p-3">Action</th>
+                                <th class="p-3">Policy / Reason</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pbgcPiiFindingsTableBody" class="divide-y divide-slate-800/60 font-mono text-[11px]">
+                            <tr>
+                                <td colspan="6" class="p-8 text-center text-slate-500 italic font-sans">No PII findings scanned yet. Click 'Run Full Scan' above.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="pt-3 border-t border-slate-800 flex items-center justify-between shrink-0">
+                <span class="text-[11px] text-slate-400">Compliant with PBGC IM 05-09 & IM 10-03 privacy standards</span>
+                <div class="flex items-center space-x-2.5">
+                    <button onclick="applyRedactionsToQueue()" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white font-semibold text-xs rounded-xl transition-all shadow-md cursor-pointer">
+                        Apply Redactions to Corpus
+                    </button>
+                    <button onclick="toggleModal('pbgcPiiModal', false)" class="px-5 py-2.5 bg-slate-800 hover:bg-slate-750 text-slate-200 font-semibold text-xs rounded-xl transition-all cursor-pointer">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- JSONC Preview Modal -->
     <div id="jsoncPreviewModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center hidden">
         <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-3xl w-full p-7 shadow-2xl space-y-4 ring-1 ring-white/15 flex flex-col max-h-[85vh]">
@@ -567,6 +653,130 @@
                 console.error('Failed to auto-load DB session:', e);
             }
         });
+
+        
+        // PBGC PII Detector & Redaction Engine (IM 05-09 & IM 10-03)
+        let pbgcPiiFindings = [];
+
+        function openPbgcPiiModal() {
+            toggleModal('pbgcPiiModal', true);
+            runPbgcPiiScan();
+        }
+
+        const pbgcDetectors = [
+            { type: "SSN", regex: /(?!000|666|9\d{2})\d{3}[- ]?\d{2}[- ]?\d{4}/g, severity: "critical", confidence: 0.95, policy: "Direct identifier under PBGC IM 05-09 & IM 10-03" },
+            { type: "EIN_OR_ROUTING", regex: /\d{2}-\d{7}|\d{9}/g, severity: "high", confidence: 0.7, policy: "Financial or organizational identifier" },
+            { type: "BANK_ACCOUNT", regex: /(?:account|acct|bank account)[:\s#-]*\d{6,17}/gi, severity: "critical", confidence: 0.88, policy: "Bank or payment data requiring strong safeguards" },
+            { type: "EMAIL", regex: /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g, severity: "medium", confidence: 0.9, policy: "Linkable identifier under PBGC privacy policy" },
+            { type: "PHONE", regex: /(?:\+?1[-.\s]*)?\(?[2-9]\d{2}\)?[-.\s]*\d{3}[-.\s]*\d{4}/g, severity: "medium", confidence: 0.85, policy: "Linkable contact identifier" },
+            { type: "CREDIT_CARD", regex: /(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|3[47][0-9]{13})/g, severity: "critical", confidence: 0.9, policy: "Financial account data" },
+            { type: "DOB", regex: /(?:DOB|date of birth|birth date)[:\s-]*(?:0?[1-9]|1[0-2])[/-](?:0?[1-9]|[12]\d|3[01])[/-](?:19|20)\d{2}/gi, severity: "high", confidence: 0.8, policy: "Directly linkable personal attribute" },
+            { type: "AWS_KEY", regex: /AKIA[0-9A-Z]{16}/g, severity: "critical", confidence: 0.98, policy: "Credential or technical secret" }
+        ];
+
+        function runPbgcPiiScan() {
+            pbgcPiiFindings = [];
+            fileQueue.forEach(item => {
+                if (!item.text) return;
+                pbgcDetectors.forEach(det => {
+                    det.regex.lastIndex = 0;
+                    let match;
+                    while ((match = det.regex.exec(item.text)) !== null) {
+                        const val = match[0];
+                        const masked = val.length <= 4 ? "****" : "*".repeat(val.length - 4) + val.slice(-4);
+                        pbgcPiiFindings.push({
+                            id: 'pii_' + Math.random().toString(36).substring(2, 9),
+                            fileId: item.id,
+                            file: item.name,
+                            type: det.type,
+                            match: val,
+                            masked,
+                            severity: det.severity,
+                            confidence: det.confidence,
+                            policy: det.policy,
+                            action: det.severity === 'critical' || det.severity === 'high' ? 'redact' : 'unresolved'
+                        });
+                    }
+                });
+            });
+
+            document.getElementById('piiCountBadge').textContent = pbgcPiiFindings.length;
+            document.getElementById('piiStatTotal').textContent = pbgcPiiFindings.length;
+            const critCount = pbgcPiiFindings.filter(f => f.severity === 'critical' || f.severity === 'high').length;
+            const redactCount = pbgcPiiFindings.filter(f => f.action === 'redact').length;
+            document.getElementById('piiStatCritical').textContent = critCount;
+            document.getElementById('piiStatRedact').textContent = redactCount;
+            document.getElementById('piiStatFP').textContent = pbgcPiiFindings.filter(f => f.action === 'false_positive').length;
+
+            const tbody = document.getElementById('pbgcPiiFindingsTableBody');
+            if (pbgcPiiFindings.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-500 italic font-sans">No PII findings detected across corpus. All clear under PBGC IM 05-09 & IM 10-03.</td></tr>`;
+                return;
+            }
+
+            let html = '';
+            pbgcPiiFindings.forEach(f => {
+                let sevBadge = f.severity === 'critical' ? '<span class="text-red-400 font-bold">CRITICAL</span>' : (f.severity === 'high' ? '<span class="text-amber-400 font-semibold">HIGH</span>' : '<span class="text-slate-400">MEDIUM</span>');
+                html += `
+                    <tr class="hover:bg-slate-900/50 transition-colors">
+                        <td class="p-3 text-slate-300 truncate max-w-[140px]">${f.file}</td>
+                        <td class="p-3 text-indigo-300 font-semibold">${f.type}</td>
+                        <td class="p-3">${sevBadge}</td>
+                        <td class="p-3 text-amber-200">${f.masked}</td>
+                        <td class="p-3">
+                            <select onchange="updateFindingAction('${f.id}', this.value)" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-[11px] text-slate-200">
+                                <option value="redact" ${f.action === 'redact' ? 'selected' : ''}>Redact</option>
+                                <option value="erase" ${f.action === 'erase' ? 'selected' : ''}>Erase</option>
+                                <option value="retain" ${f.action === 'retain' ? 'selected' : ''}>Retain</option>
+                                <option value="false_positive" ${f.action === 'false_positive' ? 'selected' : ''}>False Positive</option>
+                            </select>
+                        </td>
+                        <td class="p-3 text-slate-400 text-[10px] font-sans">${f.policy}</td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+            showToast(`Scanned corpus: found ${pbgcPiiFindings.length} PII candidates`, 'shield-alert');
+        }
+
+        function updateFindingAction(id, action) {
+            const f = pbgcPiiFindings.find(x => x.id === id);
+            if (f) {
+                f.action = action;
+                const redactCount = pbgcPiiFindings.filter(x => x.action === 'redact' || x.action === 'erase').length;
+                document.getElementById('piiStatRedact').textContent = redactCount;
+                document.getElementById('piiStatFP').textContent = pbgcPiiFindings.filter(x => x.action === 'false_positive').length;
+            }
+        }
+
+        async function applyRedactionsToQueue() {
+            let redactedCount = 0;
+            fileQueue.forEach(item => {
+                const itemFindings = pbgcPiiFindings.filter(f => f.fileId === item.id && (f.action === 'redact' || f.action === 'erase'));
+                if (itemFindings.length > 0 && item.text) {
+                    let newText = item.text;
+                    itemFindings.forEach(f => {
+                        const token = f.action === 'erase' ? '[ERASED]' : '[REDACTED_' + f.type + ']';
+                        newText = newText.split(f.match).join(token);
+                    });
+                    item.text = newText;
+                    redactedCount++;
+                    db.pages.update(item.id, { text: newText });
+                }
+            });
+
+            if (activeInspectorId) {
+                const activeItem = fileQueue.find(f => f.id === activeInspectorId);
+                if (activeItem) {
+                    document.getElementById('inspectorTextarea').value = activeItem.text;
+                }
+            }
+
+            renderResultsGrid();
+            updateTokenEstimate();
+            toggleModal('pbgcPiiModal', false);
+            showToast(`Applied PBGC PII redactions across ${redactedCount} documents`, 'shield-check');
+        }
 
         // State management
         let fileQueue = [];
