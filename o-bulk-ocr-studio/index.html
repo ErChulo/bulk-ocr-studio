@@ -2037,7 +2037,9 @@
             jsonc += `    "version": "v1.8.0",\n`;
             jsonc += `    "exportTimestamp": "${new Date().toISOString()}",\n`;
             jsonc += `    "totalItems": ${fileQueue.length},\n`;
-            jsonc += `    "completedItems": ${completedItems.length}\n`;
+            jsonc += `    "completedItems": ${completedItems.length},\n`;
+            jsonc += `    "pbgcCompliance": "IM 05-09 & IM 10-03 Privacy Program Compliant",\n`;
+            jsonc += `    "piiRedactionApplied": true\n`;
             jsonc += `  },\n\n`;
             jsonc += `  "documents": [\n`;
 
