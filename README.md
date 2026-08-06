@@ -35,9 +35,21 @@ Traditional OCR tools output flat text or fragile formats without provenance, ma
 ## 🚀 Quick Start & User Guide
 
 ### Running Locally
-Because this is a pure client-side application, you don't need Node.js servers, Python backends, or Docker containers to run it:
-1. Clone or download this repository.
-2. Open `bulk-ocr-app/index.html` directly in any modern web browser (Chrome, Safari, Firefox, Edge).
+
+Because modern web browsers enforce strict security policies on `file://` URLs (treating every file as a unique security origin and blocking Web Workers or local asset fetches), we recommend running a lightweight local HTTP server:
+
+1. **Using Python (Recommended for Air-Gapped/Offline environments)**:
+   ```bash
+   python3 -m http.server 8000
+   ```
+   Then open: `http://localhost:8000/o-bulk-ocr-studio/` (offline version) or `http://localhost:8000/bulk-ocr-app/` (CDN version).
+
+2. **Using Node.js**:
+   ```bash
+   npx serve
+   ```
+
+*(Note: If you double-click `index.html` to open it directly from disk (`file://`), modern browsers restrict Web Workers and local sub-requests with CORS/security origin warnings).*
 
 ### Step-by-Step Usage Example
 
