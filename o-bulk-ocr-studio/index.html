@@ -1183,7 +1183,9 @@
                         }
                     };
                     if (isFileProtocol) {
-                        tesseractOpts.workerBlobURL = false;
+                        // Under file:// protocol, avoid fetching external worker script over disk (CORS/origin null error). Use default blob worker or omit workerPath.
+                        delete tesseractOpts.workerPath;
+                        tesseractOpts.workerBlobURL = true;
                     }
                     currentWorker = await Tesseract.createWorker(lang, 1, tesseractOpts);
                     hideLoadingSpinner();
