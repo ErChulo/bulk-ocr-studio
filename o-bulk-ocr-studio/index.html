@@ -361,11 +361,22 @@
                     <span id="lowConfCounter" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono bg-amber-500/20 text-amber-300">Word 1 of 5</span>
                 </div>
 
+                <!-- Adobe Acrobat-style Visual Context Snippet & Confidence -->
                 <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 flex flex-col items-center justify-center space-y-3 shadow-inner">
-                    <div class="text-[11px] text-slate-400 uppercase tracking-wider font-semibold">Flagged Word Confidence</div>
-                    <div class="flex items-center space-x-3">
-                        <span id="lowConfWordDisplay" class="text-lg font-mono font-bold text-amber-300 bg-slate-900 px-4 py-2 rounded-xl border border-slate-700">uncertain_word</span>
-                        <span id="lowConfScoreBadge" class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold font-mono bg-red-500/20 text-red-400 border border-red-500/30">48%</span>
+                    <div class="text-[11px] text-slate-400 uppercase tracking-wider font-semibold flex items-center justify-between w-full px-2">
+                        <span>Document Context Crop</span>
+                        <span id="lowConfScoreBadge" class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold font-mono bg-red-500/20 text-red-400 border border-red-500/30">48% confidence</span>
+                    </div>
+                    <!-- Mini Canvas / Image Crop Container -->
+                    <div class="w-full h-24 bg-slate-900 border border-slate-800 rounded-xl overflow-hidden flex items-center justify-center relative shadow-inner">
+                        <canvas id="lowConfCropCanvas" class="max-h-full max-w-full object-contain"></canvas>
+                        <div id="lowConfFallbackCropText" class="absolute inset-0 flex items-center justify-center font-mono text-sm font-bold text-amber-300 bg-slate-900/90">
+                            uncertain_word
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2 w-full pt-1">
+                        <span class="text-[10px] text-slate-400">OCR Detected:</span>
+                        <span id="lowConfWordDisplay" class="text-xs font-mono font-bold text-amber-300 bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-700">uncertain_word</span>
                     </div>
                 </div>
 
@@ -1546,13 +1557,66 @@
                 return;
             }
             const wordObj = activeLowConfWords[currentLowConfIndex];
-            document.getElementById('lowConfItemName').textContent = fileQueue.find(f => f.id === activeLowConfItemId)?.name || 'Document';
+            const item = fileQueue.find(f => f.id === activeLowConfItemId);
+            
+            document.getElementById('lowConfItemName').textContent = item?.name || 'Document';
             document.getElementById('lowConfCounter').textContent = `Word ${currentLowConfIndex + 1} of ${activeLowConfWords.length}`;
             document.getElementById('lowConfWordDisplay').textContent = wordObj.text;
-            document.getElementById('lowConfScoreBadge').textContent = `${wordObj.confidence}%`;
+            document.getElementById('lowConfScoreBadge').textContent = `${Math.round(wordObj.confidence)}% conf`;
             document.getElementById('lowConfInput').value = wordObj.text;
             document.getElementById('lowConfInput').focus();
             document.getElementById('lowConfInput').select();
+
+            renderLowConfSnippetCrop(item, wordObj);
+        }
+
+        function renderLowConfSnippetCrop(item, wordObj) {
+            const canvas = document.getElementById('lowConfCropCanvas');
+            const fallbackText = document.getElementById('lowConfFallbackCropText');
+            if (!item || !item.previewUrl) {
+                if (canvas) canvas.classList.add('hidden');
+                if (fallbackText) {
+                    fallbackText.classList.remove('hidden');
+                    fallbackText.textContent = wordObj.text;
+                }
+                return;
+            }
+
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = () => {
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                canvas.width = canvas.parentElement.clientWidth || 250;
+                canvas.height = canvas.parentElement.clientHeight || 96;
+                ctx.fillStyle = '#0f172a';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                if (wordObj.bbox) {
+                    const bx = wordObj.bbox;
+                    const pad = 24;
+                    const sx = Math.max(0, bx.x0 - pad);
+                    const sy = Math.max(0, bx.y0 - pad);
+                    const sw = Math.min(img.width - sx, (bx.x1 - bx.x0) + (pad * 2));
+                    const sh = Math.min(img.height - sy, (bx.y1 - bx.y0) + (pad * 2));
+
+                    ctx.drawImage(img, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+                    canvas.classList.remove('hidden');
+                    if (fallbackText) fallbackText.classList.add('hidden');
+                } else {
+                    ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, canvas.width, canvas.height);
+                    canvas.classList.remove('hidden');
+                    if (fallbackText) fallbackText.classList.add('hidden');
+                }
+            };
+            img.onerror = () => {
+                if (canvas) canvas.classList.add('hidden');
+                if (fallbackText) {
+                    fallbackText.classList.remove('hidden');
+                    fallbackText.textContent = wordObj.text;
+                }
+            };
+            img.src = item.previewUrl;
         }
 
         function acceptLowConfWord() {
