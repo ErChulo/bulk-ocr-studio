@@ -198,20 +198,15 @@
                 </div>
             </div>
 
-            <!-- Queue Summary Footer -->
-            <div class="p-3 bg-slate-950 border-t border-slate-800 text-xs text-slate-400 flex flex-col space-y-2 shadow-inner">
-                <div class="flex items-center justify-between">
+            <!-- Queue Summary Footer (Secondary details hidden under a tooltip / info icon modal) -->
+            <div class="p-3 bg-slate-950 border-t border-slate-800 text-xs text-slate-400 flex items-center justify-between shadow-inner">
+                <div class="flex flex-col space-y-0.5">
                     <span id="queueProgressText" class="font-medium text-slate-300">Progress: 0 / 0 items</span>
-                    <span id="queueTimeText" class="font-mono text-slate-400">Elapsed: 0s</span>
+                    <span id="queueTimeText" class="font-mono text-[11px] text-slate-400">Elapsed: 0s</span>
                 </div>
-                <div class="flex items-center justify-between text-indigo-400 font-semibold bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-1.5 rounded-xl">
-                    <span class="flex items-center gap-1.5"><i data-lucide="timer" class="w-3.5 h-3.5"></i> Est. Remaining:</span>
-                    <span id="queueEtaText" class="font-mono">Calculating...</span>
-                </div>
-                <div class="flex items-center justify-between text-slate-300 bg-slate-900 border border-slate-800 px-2.5 py-1.5 rounded-xl text-[11px]">
-                    <span class="flex items-center gap-1.5"><i data-lucide="cpu" class="w-3.5 h-3.5 text-violet-400"></i> Est. Tokens:</span>
-                    <span id="queueTokenEstimate" class="font-mono text-violet-300">0 tokens</span>
-                </div>
+                <button onclick="toggleModal('statsInfoModal', true)" title="View Queue Stats & Token Estimates" class="inline-flex items-center justify-center p-2 rounded-xl bg-slate-900 hover:bg-slate-850 text-indigo-400 border border-slate-800 transition-all cursor-pointer shadow-sm">
+                    <i data-lucide="info" class="w-4 h-4"></i>
+                </button>
             </div>
         </aside>
 
@@ -389,6 +384,39 @@
                         Accept & Next
                     </button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    
+    <!-- Queue Stats & Token Estimates Info Modal -->
+    <div id="statsInfoModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4 ring-1 ring-white/15 flex flex-col">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                    <div class="p-1.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
+                        <i data-lucide="info" class="w-4 h-4"></i>
+                    </div>
+                    Queue Statistics & Tokens
+                </h3>
+                <button onclick="toggleModal('statsInfoModal', false)" class="text-slate-400 hover:text-slate-200 p-1 rounded-lg hover:bg-slate-800 cursor-pointer">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            <div class="space-y-3 text-xs text-slate-300">
+                <div class="flex items-center justify-between text-indigo-400 font-semibold bg-indigo-500/10 border border-indigo-500/20 px-3 py-2 rounded-xl">
+                    <span class="flex items-center gap-1.5"><i data-lucide="timer" class="w-4 h-4"></i> Est. Remaining:</span>
+                    <span id="queueEtaText" class="font-mono">Calculating...</span>
+                </div>
+                <div class="flex items-center justify-between text-slate-300 bg-slate-950 border border-slate-800 px-3 py-2 rounded-xl">
+                    <span class="flex items-center gap-1.5"><i data-lucide="cpu" class="w-4 h-4 text-violet-400"></i> Est. Tokens:</span>
+                    <span id="queueTokenEstimate" class="font-mono text-violet-300">0 tokens</span>
+                </div>
+            </div>
+            <div class="pt-2 border-t border-slate-800 flex justify-end">
+                <button onclick="toggleModal('statsInfoModal', false)" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-xl transition-all cursor-pointer">
+                    Close
+                </button>
             </div>
         </div>
     </div>
@@ -1342,7 +1370,9 @@
             const escaped = escapeHtml(text);
             if (!regex) return escaped;
             try {
-                return escaped.replace(regex, match => `<mark class="bg-amber-500/40 text-amber-200 font-bold rounded px-1 py-0.5 border border-amber-500/50">${match}</mark>`);
+                let flags = regex.flags.includes('g') ? regex.flags : regex.flags + 'g';
+                let gRegex = new RegExp(regex.source, flags);
+                return escaped.replace(gRegex, match => `<mark class="bg-amber-500/40 text-amber-200 font-bold rounded px-1 py-0.5 border border-amber-500/50">${match}</mark>`);
             } catch(e) {
                 return escaped;
             }
@@ -1358,7 +1388,7 @@
             if (rawQuery) {
                 if (isRegexSearchEnabled) {
                     try {
-                        regex = new RegExp(rawQuery, 'i');
+                        let pq = rawQuery.replace(/\\n/g, '\n').replace(/\\r/g, '\r').replace(/\\t/g, '\t'); regex = new RegExp(pq, 'gi');
                     } catch (e) {
                         searchError = true;
                     }
