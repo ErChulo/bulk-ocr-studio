@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Offline Bulk OCR Studio (o-bulk-ocr-studio) - 100% Air-Gapped Client-Side LLM Pipeline</title>
+    <title>Offline Offline Bulk OCR Studio (o-bulk-ocr-studio) - 100% Air-Gapped Client-Side Document Pipeline</title>
     <!-- Local Vendored Tailwind CSS -->
     <script src="./vendor/tailwind.js"></script>
     <!-- Vendored Local Libraries for 100% Offline / Air-Gapped Operation -->
@@ -65,7 +65,7 @@
             </div>
             <h2 class="text-base font-bold text-white tracking-tight">Desktop / Laptop Display Required</h2>
             <p class="text-xs text-slate-400 leading-relaxed">
-                Offline Bulk OCR Studio is engineered for power-user document batching, schema configuration, and low-confidence review on desktop and laptop screens. Please switch to a larger display.
+                Offline Bulk OCR Studio is engineered for power-user document batching and low-confidence review on desktop and laptop screens. Please switch to a larger display.
             </p>
         </div>
     </div>
@@ -74,24 +74,20 @@
     <header class="bg-slate-900 border-b border-slate-800 px-6 py-4 flex items-center justify-between shrink-0 shadow-xl">
         <div class="flex items-center space-x-3">
             <div class="bg-gradient-to-tr from-emerald-600 to-teal-600 p-2.5 rounded-2xl shadow-lg shadow-emerald-500/20 flex items-center justify-center text-white ring-1 ring-white/10">
-                <i data-lucide="shield-check" class="w-6 h-6"></i>
+                <i data-lucide="scan-text" class="w-6 h-6"></i>
             </div>
             <div>
                 <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
-                    Offline Bulk OCR (o-bulk-ocr-studio)
+                    Offline Bulk OCR Studio 
                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold tracking-wider uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">100% Air-Gapped</span>
-                    <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-mono font-medium bg-slate-800 text-slate-300 border border-slate-700">v1.7.0-offline</span>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-mono font-medium bg-slate-800 text-slate-300 border border-slate-700">v1.8.0-offline</span>
                 </h1>
-                <p class="text-xs text-slate-400">Local-first, vendored document ingestion & LLM pipeline studio requiring zero internet connection</p>
+                <p class="text-xs text-slate-400">Extract, parse, and package documents into clean JSONC payloads for downstream LLMs</p>
             </div>
         </div>
         
         <!-- Grouped Action Toolbar (Buttons) -->
         <div class="flex items-center space-x-2.5">
-            <button id="schemaConfigBtn" onclick="toggleModal('schemaConfigModal', true)" class="inline-flex items-center justify-center space-x-2 px-4 py-2.5 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 text-xs font-semibold rounded-xl transition-all border border-emerald-500/40 hover:border-emerald-500 cursor-pointer shadow-sm">
-                <i data-lucide="file-code" class="w-4 h-4 text-emerald-400"></i>
-                <span>LLM Schema & Prompt</span>
-            </button>
             <button id="loadSavedBatchBtn" onclick="loadBatchFromDB()" class="inline-flex items-center justify-center space-x-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-750 text-slate-200 text-xs font-semibold rounded-xl transition-all border border-slate-700 hover:border-emerald-500/40 cursor-pointer shadow-sm">
                 <i data-lucide="database" class="w-4 h-4 text-emerald-400"></i>
                 <span>Load DB (<span id="dbCountBadge">0</span>)</span>
@@ -101,13 +97,13 @@
                 <span>Preview JSONC</span>
             </button>
             <button id="helpBtn" onclick="toggleModal('helpModal', true)" class="inline-flex items-center justify-center space-x-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-750 text-slate-200 text-xs font-semibold rounded-xl transition-all border border-slate-700 hover:border-slate-600 cursor-pointer shadow-sm">
-                <i data-lucide="help-circle" class="w-4 h-4 text-emerald-400"></i>
+                <i data-lucide="help-circle" class="w-4 h-4 text-indigo-400"></i>
                 <span>Guide</span>
             </button>
             <div class="h-5 w-px bg-slate-800 mx-1"></div>
             <div class="text-xs text-slate-300 flex items-center gap-2 bg-slate-950/80 px-3.5 py-2 rounded-xl border border-slate-800 shadow-inner">
                 <span id="engineStatusIndicator" class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span id="engineStatusText" class="font-medium">Ready (Offline)</span>
+                <span id="engineStatusText" class="font-medium">Ready</span>
             </div>
         </div>
     </header>
@@ -123,13 +119,13 @@
                 <h2 class="text-[11px] font-bold uppercase tracking-wider text-slate-400">1. Select Input Source</h2>
                 
                 <div class="grid grid-cols-2 gap-2">
-                    <button onclick="document.getElementById('folderInput').click()" class="inline-flex flex-col items-center justify-center p-3.5 bg-slate-850 hover:bg-slate-800 border border-slate-700/80 hover:border-emerald-500/50 rounded-2xl transition-all group text-center cursor-pointer shadow-sm">
-                        <i data-lucide="folder-open" class="w-5 h-5 text-emerald-400 mb-1.5 group-hover:scale-110 transition-transform"></i>
+                    <button onclick="document.getElementById('folderInput').click()" class="inline-flex flex-col items-center justify-center p-3.5 bg-slate-850 hover:bg-slate-800 border border-slate-700/80 hover:border-indigo-500/50 rounded-2xl transition-all group text-center cursor-pointer shadow-sm">
+                        <i data-lucide="folder-open" class="w-5 h-5 text-indigo-400 mb-1.5 group-hover:scale-110 transition-transform"></i>
                         <span class="text-xs font-semibold text-slate-200">Select Folder</span>
                         <span class="text-[10px] text-slate-400 mt-0.5">All Supported Files</span>
                     </button>
-                    <button onclick="document.getElementById('fileInput').click()" class="inline-flex flex-col items-center justify-center p-3.5 bg-slate-850 hover:bg-slate-800 border border-slate-700/80 hover:border-emerald-500/50 rounded-2xl transition-all group text-center cursor-pointer">
-                        <i data-lucide="files" class="w-5 h-5 text-emerald-400 mb-1.5 group-hover:scale-110 transition-transform"></i>
+                    <button onclick="document.getElementById('fileInput').click()" class="inline-flex flex-col items-center justify-center p-3.5 bg-slate-850 hover:bg-slate-800 border border-slate-700/80 hover:border-indigo-500/50 rounded-2xl transition-all group text-center cursor-pointer">
+                        <i data-lucide="files" class="w-5 h-5 text-indigo-400 mb-1.5 group-hover:scale-110 transition-transform"></i>
                         <span class="text-xs font-semibold text-slate-200">Select Files</span>
                         <span class="text-[10px] text-slate-400 mt-0.5">Multiple formats</span>
                     </button>
@@ -140,9 +136,9 @@
                 <input type="file" id="fileInput" multiple accept="image/*,.pdf,.txt,.csv,.xlsx,.xls,.md" class="hidden" onchange="handleFileSelection(event)">
 
                 <!-- Drag & Drop Zone -->
-                <div id="dropZone" class="border-2 border-dashed border-slate-700 hover:border-emerald-500 rounded-2xl p-4 text-center transition-all bg-slate-950/40 hover:bg-slate-950/70 cursor-pointer group"
+                <div id="dropZone" class="border-2 border-dashed border-slate-700 hover:border-indigo-500 rounded-2xl p-4 text-center transition-all bg-slate-950/40 hover:bg-slate-950/70 cursor-pointer group"
                      ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" onclick="document.getElementById('fileInput').click()">
-                    <div class="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center mx-auto mb-2 text-emerald-400 group-hover:scale-105 transition-transform shadow-inner">
+                    <div class="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center mx-auto mb-2 text-indigo-400 group-hover:scale-105 transition-transform shadow-inner">
                         <i data-lucide="upload-cloud" class="w-5 h-5"></i>
                     </div>
                     <p class="text-xs text-slate-200 font-semibold">Drag & drop files or folders here</p>
@@ -157,9 +153,9 @@
                 <div class="space-y-1.5">
                     <label class="text-xs text-slate-300 font-medium flex justify-between">
                         <span>OCR Language (Images & PDFs)</span>
-                        <span class="text-[10px] text-slate-400">Local Tesseract</span>
+                        <span class="text-[10px] text-slate-400">Tesseract Data</span>
                     </label>
-                    <select id="ocrLang" class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 transition-colors shadow-inner">
+                    <select id="ocrLang" class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors shadow-inner">
                         <option value="eng">English (eng)</option>
                         <option value="spa">Spanish (spa)</option>
                         <option value="fra">French (fra)</option>
@@ -176,7 +172,7 @@
                 </div>
 
                 <div class="grid grid-cols-2 gap-2 pt-1">
-                    <button id="startBtn" onclick="startBatchOCR()" disabled class="inline-flex items-center justify-center space-x-1.5 py-2.5 px-3 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-600 text-white font-semibold text-xs rounded-xl transition-all shadow-md shadow-emerald-600/20 cursor-pointer disabled:cursor-not-allowed">
+                    <button id="startBtn" onclick="startBatchOCR()" disabled class="inline-flex items-center justify-center space-x-1.5 py-2.5 px-3 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 disabled:text-slate-600 text-white font-semibold text-xs rounded-xl transition-all shadow-md shadow-indigo-600/20 cursor-pointer disabled:cursor-not-allowed">
                         <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i>
                         <span id="startBtnText">Process Queue</span>
                     </button>
@@ -192,7 +188,7 @@
                 <div class="flex items-center space-x-2">
                     <h2 class="text-[11px] font-bold uppercase tracking-wider text-slate-300">Queue Items</h2>
                     <!-- Badge Styling -->
-                    <span id="fileCountBadge" class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300">0 items</span>
+                    <span id="fileCountBadge" class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/20 text-indigo-300">0 items</span>
                 </div>
                 <button onclick="clearQueue()" class="inline-flex items-center justify-center space-x-1 text-slate-400 hover:text-red-400 text-xs transition-colors cursor-pointer font-medium px-2 py-1 rounded-lg hover:bg-slate-800">
                     <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
@@ -217,13 +213,13 @@
                     <span id="queueProgressText" class="font-medium text-slate-300">Progress: 0 / 0 items</span>
                     <span id="queueTimeText" class="font-mono text-slate-400">Elapsed: 0s</span>
                 </div>
-                <div class="flex items-center justify-between text-emerald-400 font-semibold bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1.5 rounded-xl">
+                <div class="flex items-center justify-between text-indigo-400 font-semibold bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-1.5 rounded-xl">
                     <span class="flex items-center gap-1.5"><i data-lucide="timer" class="w-3.5 h-3.5"></i> Est. Remaining:</span>
                     <span id="queueEtaText" class="font-mono">Calculating...</span>
                 </div>
                 <div class="flex items-center justify-between text-slate-300 bg-slate-900 border border-slate-800 px-2.5 py-1.5 rounded-xl text-[11px]">
-                    <span class="flex items-center gap-1.5"><i data-lucide="cpu" class="w-3.5 h-3.5 text-teal-400"></i> Est. Tokens:</span>
-                    <span id="queueTokenEstimate" class="font-mono text-teal-300">0 tokens</span>
+                    <span class="flex items-center gap-1.5"><i data-lucide="cpu" class="w-3.5 h-3.5 text-violet-400"></i> Est. Tokens:</span>
+                    <span id="queueTokenEstimate" class="font-mono text-violet-300">0 tokens</span>
                 </div>
             </div>
         </aside>
@@ -235,11 +231,11 @@
             <div id="progressBarContainer" class="hidden bg-slate-900 border-b border-slate-800 px-6 py-3 flex items-center gap-4 shrink-0 shadow-md">
                 <div class="flex-1">
                     <div class="flex justify-between text-xs mb-1.5 font-medium">
-                        <span id="currentProcessingLabel" class="text-emerald-400 truncate">Processing...</span>
+                        <span id="currentProcessingLabel" class="text-indigo-400 truncate">Processing...</span>
                         <span id="progressPercentage" class="text-slate-300 font-mono">0%</span>
                     </div>
                     <div class="w-full bg-slate-950 rounded-full h-2.5 overflow-hidden border border-slate-800 p-0.5 shadow-inner">
-                        <div id="progressBarFill" class="bg-gradient-to-r from-emerald-500 to-teal-500 h-full rounded-full transition-all duration-300" style="width: 0%"></div>
+                        <div id="progressBarFill" class="bg-gradient-to-r from-indigo-500 to-violet-500 h-full rounded-full transition-all duration-300" style="width: 0%"></div>
                     </div>
                 </div>
                 <button onclick="stopBatchOCR()" class="inline-flex items-center justify-center space-x-1.5 px-3.5 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded-xl text-xs font-semibold transition-colors cursor-pointer shadow-sm">
@@ -253,8 +249,8 @@
                 <div class="flex items-center space-x-3">
                     <div class="relative flex items-center">
                         <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"></i>
-                        <input type="text" id="searchInput" oninput="filterResults()" placeholder="Search text (RegEx supported)..." class="bg-slate-950 border border-slate-750 rounded-xl pl-9 pr-20 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500 w-80 shadow-inner transition-colors">
-                        <button onclick="toggleRegexMode()" id="regexToggleBtn" title="Toggle Regular Expression Search" class="absolute right-2 inline-flex items-center justify-center px-2 py-1 bg-slate-800 hover:bg-slate-750 text-slate-400 hover:text-emerald-300 text-[10px] font-mono rounded-lg border border-slate-700 transition-all cursor-pointer">
+                        <input type="text" id="searchInput" oninput="filterResults()" placeholder="Search text (RegEx supported)..." class="bg-slate-950 border border-slate-750 rounded-xl pl-9 pr-20 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 w-80 shadow-inner transition-colors">
+                        <button onclick="toggleRegexMode()" id="regexToggleBtn" title="Toggle Regular Expression Search" class="absolute right-2 inline-flex items-center justify-center px-2 py-1 bg-slate-800 hover:bg-slate-750 text-slate-400 hover:text-indigo-300 text-[10px] font-mono rounded-lg border border-slate-700 transition-all cursor-pointer">
                             .* RegEx
                         </button>
                     </div>
@@ -264,12 +260,12 @@
                 
                 <!-- Grouped Export Action Buttons -->
                 <div class="flex items-center space-x-2">
-                    <button onclick="exportAllAsZip()" id="exportZipBtn" disabled class="inline-flex items-center justify-center space-x-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-900 disabled:text-slate-600 text-white text-xs font-semibold rounded-xl transition-all shadow-sm cursor-pointer disabled:cursor-not-allowed">
+                    <button onclick="exportAllAsZip()" id="exportZipBtn" disabled class="inline-flex items-center justify-center space-x-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-900 disabled:text-slate-600 text-white text-xs font-semibold rounded-xl transition-all shadow-sm cursor-pointer disabled:cursor-not-allowed">
                         <i data-lucide="file-archive" class="w-4 h-4"></i>
                         <span>ZIP</span>
                     </button>
                     <button onclick="exportAllAsSingleTxt()" id="exportTxtBtn" disabled class="inline-flex items-center justify-center space-x-1.5 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-950 disabled:text-slate-600 text-slate-200 text-xs font-semibold rounded-xl transition-colors border border-slate-750 cursor-pointer disabled:cursor-not-allowed shadow-sm">
-                        <i data-lucide="file-text" class="w-4 h-4 text-emerald-400"></i>
+                        <i data-lucide="file-text" class="w-4 h-4 text-indigo-400"></i>
                         <span>TXT</span>
                     </button>
                     <button onclick="exportAsJson()" id="exportJsonBtn" disabled class="inline-flex items-center justify-center space-x-1.5 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-950 disabled:text-slate-600 text-slate-200 text-xs font-semibold rounded-xl transition-colors border border-slate-750 cursor-pointer disabled:cursor-not-allowed shadow-sm">
@@ -294,7 +290,7 @@
                                 <i data-lucide="file-search" class="w-8 h-8"></i>
                             </div>
                             <h3 class="text-sm font-semibold text-slate-300">No Document Results Yet</h3>
-                            <p class="text-xs text-slate-500 mt-1 max-w-sm text-center">Add images, PDFs, CSV, Excel (.xlsx), Text, or Markdown files to the queue and extract structured data offline instantly.</p>
+                            <p class="text-xs text-slate-500 mt-1 max-w-sm text-center">Add images, PDFs, CSV, Excel (.xlsx), Text, or Markdown files to the queue and extract structured data instantly.</p>
                         </div>
                     </div>
                 </div>
@@ -303,7 +299,7 @@
                 <div id="inspectorPanel" class="w-[480px] bg-slate-900/90 border-l border-slate-800 flex flex-col hidden shadow-2xl">
                     <div class="px-5 py-3.5 bg-slate-850 border-b border-slate-800 flex items-center justify-between">
                         <h3 class="text-xs font-bold text-slate-200 flex items-center gap-2">
-                            <i data-lucide="eye" class="w-4 h-4 text-emerald-400"></i>
+                            <i data-lucide="eye" class="w-4 h-4 text-indigo-400"></i>
                             <span id="inspectorTitle">Document Inspector</span>
                         </h3>
                         <button onclick="closeInspector()" class="inline-flex items-center justify-center text-slate-400 hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer">
@@ -316,7 +312,7 @@
                         <div id="inspectorPreviewContainer" class="bg-slate-950 rounded-2xl border border-slate-800 p-3 flex items-center justify-center h-52 relative overflow-hidden group shadow-inner">
                             <img id="inspectorImage" src="" alt="Preview" class="max-h-full max-w-full object-contain rounded-xl shadow">
                             <div id="inspectorDocBadge" class="hidden absolute inset-0 flex flex-col items-center justify-center bg-slate-950/90 text-slate-300 p-4 text-center">
-                                <i data-lucide="file-text" class="w-10 h-10 text-emerald-400 mb-2"></i>
+                                <i data-lucide="file-text" class="w-10 h-10 text-indigo-400 mb-2"></i>
                                 <span class="text-xs font-bold" id="inspectorDocTypeLabel">Document File</span>
                             </div>
                             <div class="absolute bottom-3 right-3 bg-slate-900/90 backdrop-blur-md px-2.5 py-1 rounded-xl text-[10px] text-slate-300 font-mono border border-slate-700 shadow" id="inspectorMetaSize"></div>
@@ -334,21 +330,21 @@
                         <div class="space-y-2 flex flex-col flex-1">
                             <div class="flex items-center justify-between">
                                 <label class="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
-                                    <i data-lucide="file-text" class="w-3.5 h-3.5 text-emerald-400"></i>
+                                    <i data-lucide="file-text" class="w-3.5 h-3.5 text-indigo-400"></i>
                                     <span>Extracted / Parsed Content</span>
                                 </label>
                                 <div class="flex items-center space-x-2">
-                                    <button onclick="copyInspectorText()" class="inline-flex items-center justify-center text-[11px] font-medium text-emerald-400 hover:text-emerald-300 space-x-1 bg-emerald-500/10 hover:bg-emerald-500/20 px-2.5 py-1 rounded-xl border border-emerald-500/20 transition-all cursor-pointer shadow-sm">
+                                    <button onclick="copyInspectorText()" class="inline-flex items-center justify-center text-[11px] font-medium text-indigo-400 hover:text-indigo-300 space-x-1 bg-indigo-500/10 hover:bg-indigo-500/20 px-2.5 py-1 rounded-xl border border-indigo-500/20 transition-all cursor-pointer shadow-sm">
                                         <i data-lucide="copy" class="w-3 h-3"></i>
                                         <span>Copy</span>
                                     </button>
                                     <button onclick="downloadSingleTxt()" class="inline-flex items-center justify-center text-[11px] font-medium text-slate-300 hover:text-slate-100 space-x-1 bg-slate-800 hover:bg-slate-750 px-2.5 py-1 rounded-xl border border-slate-700 transition-all cursor-pointer shadow-sm">
-                                        <i data-lucide="download" class="w-3 h-3 text-emerald-400"></i>
+                                        <i data-lucide="download" class="w-3 h-3 text-indigo-400"></i>
                                         <span>Save TXT</span>
                                     </button>
                                 </div>
                             </div>
-                            <textarea id="inspectorTextarea" oninput="updateInspectorText(this.value)" class="w-full h-60 bg-slate-950 border border-slate-800 rounded-2xl p-3.5 text-xs text-slate-200 font-mono focus:outline-none focus:border-emerald-500 resize-none shadow-inner leading-relaxed"></textarea>
+                            <textarea id="inspectorTextarea" oninput="updateInspectorText(this.value)" class="w-full h-60 bg-slate-950 border border-slate-800 rounded-2xl p-3.5 text-xs text-slate-200 font-mono focus:outline-none focus:border-indigo-500 resize-none shadow-inner leading-relaxed"></textarea>
                         </div>
                     </div>
                 </div>
@@ -358,7 +354,7 @@
         </main>
     </div>
 
-    <!-- Low-Confidence Word Review Wizard Modal (Adobe Acrobat style) -->
+    <!-- Low-Confidence Review Wizard Modal (Adobe Acrobat style) -->
     <div id="lowConfModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center hidden">
         <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-7 shadow-2xl space-y-5 ring-1 ring-white/15 flex flex-col">
             <div class="flex items-center justify-between border-b border-slate-800 pb-4 shrink-0">
@@ -406,66 +402,6 @@
         </div>
     </div>
 
-    <!-- LLM Schema & Prompt Configurator Modal -->
-    <div id="schemaConfigModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center hidden">
-        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl w-full p-7 shadow-2xl space-y-5 ring-1 ring-white/15 flex flex-col max-h-[90vh]">
-            <div class="flex items-center justify-between border-b border-slate-800 pb-4 shrink-0">
-                <h3 class="text-base font-bold text-white flex items-center gap-2.5">
-                    <div class="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
-                        <i data-lucide="file-code" class="w-5 h-5"></i>
-                    </div>
-                    LLM System Prompt & JSON Schema Studio
-                </h3>
-                <button onclick="toggleModal('schemaConfigModal', false)" class="inline-flex items-center justify-center text-slate-400 hover:text-slate-200 p-1.5 rounded-xl hover:bg-slate-800 cursor-pointer">
-                    <i data-lucide="x" class="w-4 h-4"></i>
-                </button>
-            </div>
-            
-            <div class="flex-1 overflow-y-auto space-y-4 text-xs text-slate-300">
-                <p class="text-slate-400">Configure your downstream LLM instructions and target JSON Schema. The app validates your schema syntax in real-time to ensure clean downstream parsing.</p>
-                
-                <div class="space-y-1.5">
-                    <label class="font-semibold text-slate-200 flex items-center justify-between">
-                        <span>Downstream System Prompt / Instructions</span>
-                        <span class="text-[10px] text-slate-500">Injected into JSONC metadata</span>
-                    </label>
-                    <textarea id="configSystemPrompt" class="w-full h-24 bg-slate-950 border border-slate-800 rounded-2xl p-3 text-xs text-slate-200 font-mono focus:outline-none focus:border-emerald-500 resize-none shadow-inner">You are an expert data extraction agent. Extract structured entities and records from the provided OCR and document text matching the attached JSON schema.</textarea>
-                </div>
-
-                <div class="space-y-1.5">
-                    <label class="font-semibold text-slate-200 flex items-center justify-between">
-                        <span>Target JSON Schema (Draft-07 / OpenAPI compatible)</span>
-                        <span id="schemaValidationStatus" class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20"><i data-lucide="check-circle" class="w-3 h-3 mr-1"></i> Valid JSON Schema</span>
-                    </label>
-                    <textarea id="configJsonSchema" oninput="validateJsonSchemaInput(this.value)" class="w-full h-40 bg-slate-950 border border-slate-800 rounded-2xl p-3 text-xs text-amber-300 font-mono focus:outline-none focus:border-emerald-500 resize-none shadow-inner">{
-  "type": "object",
-  "properties": {
-    "documentTitle": { "type": "string" },
-    "extractedEntities": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "key": { "type": "string" },
-          "value": { "type": "string" }
-        }
-      }
-    }
-  },
-  "required": ["documentTitle", "extractedEntities"]
-}</textarea>
-                </div>
-            </div>
-
-            <div class="pt-3 border-t border-slate-800 flex items-center justify-between shrink-0">
-                <span class="text-[11px] text-slate-400">Schemas are validated before export</span>
-                <button onclick="saveSchemaConfig()" class="inline-flex items-center justify-center px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold text-xs rounded-xl transition-all shadow-md shadow-emerald-600/20 cursor-pointer">
-                    Save & Validate
-                </button>
-            </div>
-        </div>
-    </div>
-
     <!-- JSONC Preview Modal -->
     <div id="jsoncPreviewModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center hidden">
         <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-3xl w-full p-7 shadow-2xl space-y-4 ring-1 ring-white/15 flex flex-col max-h-[85vh]">
@@ -479,7 +415,7 @@
                 </button>
             </div>
             <div class="flex-1 overflow-hidden flex flex-col space-y-2">
-                <p class="text-xs text-slate-400">Self-describing LLM pipeline package with embedded prompt, validated JSON schema, and extracted text:</p>
+                <p class="text-xs text-slate-400">Self-describing document package with extracted text and metadata:</p>
                 <textarea id="jsoncPreviewArea" readonly class="w-full flex-1 bg-slate-950 border border-slate-800 rounded-2xl p-4 text-xs text-amber-200 font-mono focus:outline-none resize-none shadow-inner leading-relaxed"></textarea>
             </div>
             <div class="pt-3 border-t border-slate-800 flex items-center justify-between shrink-0">
@@ -501,12 +437,12 @@
     <!-- Loading / Spinner Modal (triggers after 1s delay) -->
     <div id="loadingModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center hidden">
         <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-sm w-full p-8 shadow-2xl flex flex-col items-center text-center space-y-4 ring-1 ring-white/10">
-            <div class="w-14 h-14 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 animate-spin shadow-inner">
+            <div class="w-14 h-14 rounded-2xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 animate-spin shadow-inner">
                 <i data-lucide="loader-2" class="w-7 h-7"></i>
             </div>
             <div>
                 <h3 id="loadingTitle" class="text-sm font-bold text-white tracking-tight">Processing Files...</h3>
-                <p id="loadingSubtitle" class="text-xs text-slate-400 mt-1.5 leading-relaxed">Please wait while we parse documents offline.</p>
+                <p id="loadingSubtitle" class="text-xs text-slate-400 mt-1.5 leading-relaxed">Please wait while we parse documents and prepare items.</p>
             </div>
         </div>
     </div>
@@ -516,28 +452,28 @@
         <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-xl w-full p-7 shadow-2xl space-y-5 ring-1 ring-white/10">
             <div class="flex items-center justify-between border-b border-slate-800 pb-4">
                 <h3 class="text-base font-bold text-white flex items-center gap-2.5">
-                    <div class="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+                    <div class="p-2 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
                         <i data-lucide="info" class="w-5 h-5"></i>
                     </div>
-                    Offline Bulk OCR Guide (o-bulk-ocr-studio)
+                    Offline Bulk OCR Studio Guide
                 </h3>
                 <button onclick="toggleModal('helpModal', false)" class="inline-flex items-center justify-center text-slate-400 hover:text-slate-200 p-1.5 rounded-xl hover:bg-slate-800 cursor-pointer">
                     <i data-lucide="x" class="w-4 h-4"></i>
                 </button>
             </div>
             <div class="space-y-3.5 text-xs text-slate-300 leading-relaxed">
-                <p class="font-semibold text-slate-200">100% Air-Gapped Operation:</p>
+                <p class="font-semibold text-slate-200">How to use this app for Downstream LLMs & RAG:</p>
                 <div class="bg-slate-950 border border-slate-800 p-4 rounded-2xl space-y-2">
                     <ul class="list-disc pl-4 space-y-1.5 text-slate-400">
-                        <li><strong>Local Vendored Libraries:</strong> All core JS files are stored locally in the `./vendor/` folder, ensuring zero external requests.</li>
-                        <li><strong>Consistent Timestamp Naming:</strong> Exports use `batch-yyyy-mm-dd_hh-mm[am/pm]`.</li>
-                        <li><strong>Low-Confidence Review Wizard:</strong> Isolate words with confidence &lt; 75% for manual word-by-word verification.</li>
-                        <li><strong>IndexedDB Caching:</strong> All data stays securely in local browser storage.</li>
+                        <li><strong>Consistent Output Naming:</strong> All ZIP, TXT, JSON, and JSONC exports automatically follow the format `batch-yyyy-mm-dd_hh-mm[am/pm]` based on system time.</li>
+                        <li><strong>Low-Confidence Review Wizard:</strong> Automatically isolates words with confidence &lt; 75%, letting you review and correct them word-by-word like Adobe Acrobat.</li>
+                        <li><strong>RegEx Search:</strong> Toggle the `.* RegEx` button in the search bar to query extracted text using regular expressions.</li>
+                        <li><strong>IndexedDB Persistence:</strong> Work survives page refreshes and never freezes your browser.</li>
                     </ul>
                 </div>
             </div>
             <div class="pt-3 border-t border-slate-800 flex justify-end">
-                <button onclick="toggleModal('helpModal', false)" class="inline-flex items-center justify-center px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold text-xs rounded-xl transition-all shadow-md cursor-pointer">
+                <button onclick="toggleModal('helpModal', false)" class="inline-flex items-center justify-center px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-xl transition-all shadow-md cursor-pointer">
                     Got it
                 </button>
             </div>
@@ -552,16 +488,13 @@
 
     <!-- Application Script Logic -->
     <script>
-        // Initialize Tesseract worker locally from vendor with offline langPath
-        if (typeof Tesseract !== 'undefined') {
-            // Configure PDF.js worker locally from vendor
+        // Configure PDF.js worker
         if (typeof pdfjsLib !== 'undefined') {
             pdfjsLib.GlobalWorkerOptions.workerSrc = './vendor/pdf.worker.min.js';
         }
-        }
 
         // Initialize Dexie.js IndexedDB database
-        const db = new Dexie('OfflineBulkOcrStudioDB');
+        const db = new Dexie('BulkOcrStudioDB');
         db.version(1).stores({
             pages: 'id, name, status, size, type'
         });
@@ -657,23 +590,23 @@
             modal.classList.add('hidden');
         }
 
-        // Drag & Drop Handlers
+        // Drag & Drop Handlers (Fixed event propagation & entry support)
         function handleDragOver(e) {
             e.preventDefault();
             e.stopPropagation();
-            document.getElementById('dropZone').classList.add('border-emerald-500', 'bg-slate-900');
+            document.getElementById('dropZone').classList.add('border-indigo-500', 'bg-slate-900');
         }
 
         function handleDragLeave(e) {
             e.preventDefault();
             e.stopPropagation();
-            document.getElementById('dropZone').classList.remove('border-emerald-500', 'bg-slate-900');
+            document.getElementById('dropZone').classList.remove('border-indigo-500', 'bg-slate-900');
         }
 
         async function handleDrop(e) {
             e.preventDefault();
             e.stopPropagation();
-            document.getElementById('dropZone').classList.remove('border-emerald-500', 'bg-slate-900');
+            document.getElementById('dropZone').classList.remove('border-indigo-500', 'bg-slate-900');
             
             const items = e.dataTransfer.items;
             const filesArray = [];
@@ -1005,6 +938,8 @@
                 }
 
                 showToast(`Successfully loaded ${fileQueue.length} items from IndexedDB!`, 'database');
+                
+                // Visual CTA Banner in UI
                 showDbLoadedBanner(fileQueue.length, completedCount);
             } catch (e) {
                 console.error(e);
@@ -1092,17 +1027,17 @@
             fileQueue.forEach(item => {
                 let statusBadge = '';
                 if (item.status === 'pending') statusBadge = '<span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium text-slate-400 bg-slate-800/80">Pending</span>';
-                else if (item.status === 'processing') statusBadge = '<span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 animate-pulse">OCR ' + Math.round(item.progress * 100) + '%</span>';
+                else if (item.status === 'processing') statusBadge = '<span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 animate-pulse">OCR ' + Math.round(item.progress * 100) + '%</span>';
                 else if (item.status === 'completed') statusBadge = '<span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20">Done</span>';
                 else if (item.status === 'error') statusBadge = '<span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold text-red-400 bg-red-500/10 border border-red-500/20">Error</span>';
 
                 html += `
-                    <div onclick="inspectFile('${item.id}')" class="p-3 rounded-2xl hover:bg-slate-850 cursor-pointer transition-all flex items-center space-x-3 group ${activeInspectorId === item.id ? 'bg-slate-850 border border-emerald-500/50 shadow-md' : 'border border-transparent'}">
+                    <div onclick="inspectFile('${item.id}')" class="p-3 rounded-2xl hover:bg-slate-850 cursor-pointer transition-all flex items-center space-x-3 group ${activeInspectorId === item.id ? 'bg-slate-850 border border-indigo-500/50 shadow-md' : 'border border-transparent'}">
                         <div class="w-10 h-10 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center shrink-0 overflow-hidden shadow-inner">
                             <img src="${item.previewUrl}" class="w-full h-full object-cover">
                         </div>
                         <div class="flex-1 min-w-0">
-                            <h4 class="text-xs font-semibold text-slate-200 truncate group-hover:text-emerald-300 transition-colors">${item.name}</h4>
+                            <h4 class="text-xs font-semibold text-slate-200 truncate group-hover:text-indigo-300 transition-colors">${item.name}</h4>
                             <p class="text-[10px] text-slate-400 truncate mt-0.5">${formatBytes(item.size)}</p>
                         </div>
                         <div class="shrink-0">
@@ -1124,7 +1059,7 @@
             return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
         }
 
-        // Robust Batch OCR & Parser Engine with Local Vendored Worker Path
+        // Robust Batch OCR & Parser Engine with Confidence Extraction
         async function startBatchOCR() {
             if (isProcessing) return;
             const pendingFiles = fileQueue.filter(f => f.status === 'pending' || f.status === 'error');
@@ -1171,8 +1106,7 @@
 
             try {
                 if (needsOcr) {
-                    showLoadingSpinner('Initializing Tesseract OCR', 'Loading local worker model and offline language data...');
-                    // Configure Tesseract to use local vendored worker path and local offline langs folder
+                    showLoadingSpinner('Initializing Tesseract OCR', 'Loading language model data...');
                     currentWorker = await Tesseract.createWorker(lang, 1, {
                         workerPath: './vendor/worker.min.js',
                         langPath: './vendor/langs',
@@ -1267,7 +1201,7 @@
             document.getElementById('startBtn').removeAttribute('disabled');
             document.getElementById('pauseBtn').setAttribute('disabled', 'true');
             document.getElementById('progressBarContainer').classList.add('hidden');
-            statusTextEl.textContent = 'Ready (Offline)';
+            statusTextEl.textContent = 'Ready';
             document.getElementById('queueEtaText').textContent = 'Completed';
 
             const completedCount = fileQueue.filter(f => f.status === 'completed').length;
@@ -1317,7 +1251,7 @@
             document.getElementById('startBtn').removeAttribute('disabled');
             document.getElementById('pauseBtn').setAttribute('disabled', 'true');
             document.getElementById('progressBarContainer').classList.add('hidden');
-            document.getElementById('engineStatusText').textContent = 'Ready (Offline)';
+            document.getElementById('engineStatusText').textContent = 'Ready';
             document.getElementById('queueEtaText').textContent = 'Stopped';
             showToast('Batch stopped', 'square');
         }
@@ -1345,12 +1279,12 @@
             const btn = document.getElementById('regexToggleBtn');
             const input = document.getElementById('searchInput');
             if (isRegexSearchEnabled) {
-                btn.className = 'absolute right-2 inline-flex items-center justify-center px-2 py-1 bg-emerald-600 text-white text-[10px] font-mono rounded-lg border border-emerald-400 transition-all cursor-pointer shadow-sm';
+                btn.className = 'absolute right-2 inline-flex items-center justify-center px-2 py-1 bg-indigo-600 text-white text-[10px] font-mono rounded-lg border border-indigo-400 transition-all cursor-pointer shadow-sm';
                 btn.title = 'RegEx Search Enabled';
                 input.placeholder = 'Search RegEx (e.g. \\d{3}-\\d{2})...';
                 showToast('RegEx search mode enabled', 'code');
             } else {
-                btn.className = 'absolute right-2 inline-flex items-center justify-center px-2 py-1 bg-slate-800 hover:bg-slate-750 text-slate-400 hover:text-emerald-300 text-[10px] font-mono rounded-lg border border-slate-700 transition-all cursor-pointer';
+                btn.className = 'absolute right-2 inline-flex items-center justify-center px-2 py-1 bg-slate-800 hover:bg-slate-750 text-slate-400 hover:text-indigo-300 text-[10px] font-mono rounded-lg border border-slate-700 transition-all cursor-pointer';
                 btn.title = 'Toggle Regular Expression Search';
                 input.placeholder = 'Search text (RegEx supported)...';
                 showToast('Standard search mode enabled', 'search');
@@ -1426,7 +1360,7 @@
             filteredQueue.forEach(item => {
                 let statusBadge = '';
                 if (item.status === 'pending') statusBadge = '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium text-slate-400 bg-slate-800">Pending</span>';
-                else if (item.status === 'processing') statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 animate-pulse">Processing ' + Math.round((item.progress || 0) * 100) + '%</span>';
+                else if (item.status === 'processing') statusBadge = `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 animate-pulse">Processing ${Math.round((item.progress || 0) * 100)}%</span>`;
                 else if (item.status === 'completed') statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20">Completed</span>';
                 else if (item.status === 'error') statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold text-red-400 bg-red-500/10 border border-red-500/30">Error</span>';
 
@@ -1434,14 +1368,14 @@
                 const lowConfCount = item.lowConfidenceWords ? item.lowConfidenceWords.length : 0;
 
                 html += `
-                    <div onclick="inspectFile('${item.id}')" class="bg-slate-900 border ${activeInspectorId === item.id ? 'border-emerald-500 shadow-xl shadow-emerald-500/10 ring-1 ring-emerald-500/30' : 'border-slate-800 hover:border-slate-700'} rounded-3xl p-5 flex flex-col transition-all cursor-pointer group shadow-md">
+                    <div onclick="inspectFile('${item.id}')" class="bg-slate-900 border ${activeInspectorId === item.id ? 'border-indigo-500 shadow-xl shadow-indigo-500/10 ring-1 ring-indigo-500/30' : 'border-slate-800 hover:border-slate-700'} rounded-3xl p-5 flex flex-col transition-all cursor-pointer group shadow-md">
                         <div class="flex items-center justify-between mb-3.5">
                             <div class="flex items-center space-x-3 min-w-0">
                                 <div class="w-10 h-10 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-center shrink-0 overflow-hidden shadow-inner">
                                     <img src="${item.previewUrl}" class="w-full h-full object-cover">
                                 </div>
                                 <div class="min-w-0">
-                                    <h4 class="text-xs font-bold text-slate-200 truncate group-hover:text-emerald-300 transition-colors">${item.name}</h4>
+                                    <h4 class="text-xs font-bold text-slate-200 truncate group-hover:text-indigo-300 transition-colors">${item.name}</h4>
                                     <p class="text-[10px] text-slate-400 mt-0.5 font-mono">${formatBytes(item.size)}</p>
                                 </div>
                             </div>
@@ -1453,7 +1387,7 @@
                         <div class="flex-1 bg-slate-950 border border-slate-850 rounded-2xl p-3.5 font-mono text-xs text-slate-300 h-36 overflow-y-auto select-text whitespace-pre-wrap shadow-inner leading-relaxed">${displayText}</div>
                         <div class="mt-4 flex items-center justify-between pt-3 border-t border-slate-800/80 text-[11px] text-slate-400">
                             <span class="font-medium">${item.text ? item.text.split(/\s+/).filter(Boolean).length + ' words' : '0 words'}</span>
-                            <span class="text-emerald-400 font-semibold group-hover:translate-x-0.5 transition-transform flex items-center gap-1">Inspect Item <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i></span>
+                            <span class="text-indigo-400 font-semibold group-hover:translate-x-0.5 transition-transform flex items-center gap-1">Inspect Item <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i></span>
                         </div>
                     </div>
                 `;
@@ -1707,68 +1641,23 @@
             showToast('JSON export downloaded', 'code');
         }
 
-        // Validate JSON Schema
-        function validateJsonSchemaInput(schemaString) {
-            const statusEl = document.getElementById('schemaValidationStatus');
-            try {
-                const parsed = JSON.parse(schemaString);
-                if (typeof parsed !== 'object' || parsed === null) {
-                    throw new Error('Schema must be a JSON object');
-                }
-                statusEl.className = 'inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20';
-                statusEl.innerHTML = '<i data-lucide="check-circle" class="w-3 h-3 mr-1"></i> Valid JSON Schema';
-                refreshIcons();
-                return true;
-            } catch (e) {
-                statusEl.className = 'inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold text-red-400 bg-red-500/10 border border-red-500/20';
-                statusEl.innerHTML = '<i data-lucide="alert-circle" class="w-3 h-3 mr-1"></i> Invalid JSON Syntax';
-                refreshIcons();
-                return false;
-            }
-        }
-
-        function saveSchemaConfig() {
-            const schemaText = document.getElementById('configJsonSchema').value.trim();
-            if (!validateJsonSchemaInput(schemaText)) {
-                showToast('Please fix JSON schema syntax errors before saving', 'alert-circle');
-                return;
-            }
-            showToast('LLM prompt & validated JSON schema saved for JSONC exports', 'check-circle');
-            toggleModal('schemaConfigModal', false);
-        }
-
-        // Generate JSONC string with validated LLM Schema & Prompt
+        // Generate JSONC string
         function generateJsoncString() {
             const completedItems = fileQueue.filter(f => f.status === 'completed');
-            const systemPrompt = document.getElementById('configSystemPrompt').value.trim();
-            const jsonSchemaText = document.getElementById('configJsonSchema').value.trim();
-            
-            let parsedSchema = {};
-            try {
-                parsedSchema = JSON.parse(jsonSchemaText);
-            } catch(e) {
-                parsedSchema = { rawSchemaString: jsonSchemaText };
-            }
 
             let jsonc = `{\n`;
             jsonc += `  // ====================================================================\n`;
-            jsonc += `  // OFFLINE BULK DOCUMENT STUDIO - LLM PIPELINE JSONC EXPORT\n`;
-            jsonc += `  // Packaged with System Prompt & Validated JSON Schema for Downstream LLMs\n`;
+            jsonc += `  // BULK DOCUMENT STUDIO - RAW LLM PIPELINE JSONC EXPORT\n`;
+            jsonc += `  // Packaged with extracted text & metadata for downstream LLM schema extraction\n`;
             jsonc += `  // Generated: ${new Date().toLocaleString()}\n`;
             jsonc += `  // ====================================================================\n\n`;
             jsonc += `  "metadata": {\n`;
             jsonc += `    "app": "Offline Bulk OCR Studio",\n`;
-            jsonc += `    "version": "v1.7.0-offline",\n`;
+            jsonc += `    "version": "v1.8.0-offline",\n`;
             jsonc += `    "exportTimestamp": "${new Date().toISOString()}",\n`;
             jsonc += `    "totalItems": ${fileQueue.length},\n`;
             jsonc += `    "completedItems": ${completedItems.length}\n`;
             jsonc += `  },\n\n`;
-            
-            jsonc += `  // Downstream LLM Extraction Instructions\n`;
-            jsonc += `  "llmPrompt": ${JSON.stringify(systemPrompt)},\n\n`;
-            jsonc += `  // Validated Target JSON Schema for LLM Structured Output validation\n`;
-            jsonc += `  "jsonSchema": ${JSON.stringify(parsedSchema, null, 2)},\n\n`;
-
             jsonc += `  "documents": [\n`;
 
             completedItems.forEach((item, idx) => {

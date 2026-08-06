@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bulk OCR Studio - Client-Side Batch OCR & LLM Pipeline Studio</title>
+    <title>Bulk OCR Studio - Client-Side Batch OCR & Document Pipeline Studio</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Tesseract.js CDN v5 -->
@@ -70,7 +70,7 @@
             </div>
             <h2 class="text-base font-bold text-white tracking-tight">Desktop / Laptop Display Required</h2>
             <p class="text-xs text-slate-400 leading-relaxed">
-                Bulk OCR & LLM Pipeline Studio is engineered for power-user document batching, schema configuration, and low-confidence review on desktop and laptop screens. Please switch to a larger display.
+                Bulk OCR Studio is engineered for power-user document batching and low-confidence review on desktop and laptop screens. Please switch to a larger display.
             </p>
         </div>
     </div>
@@ -83,21 +83,16 @@
             </div>
             <div>
                 <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
-                    Bulk OCR & LLM Studio 
-                    <!-- Pill / Badge Styling (Distinct from buttons) -->
+                    Bulk OCR Studio 
                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold tracking-wider uppercase bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">100% Client-Side</span>
-                    <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-mono font-medium bg-slate-800 text-slate-300 border border-slate-700">v1.7.0</span>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-mono font-medium bg-slate-800 text-slate-300 border border-slate-700">v1.8.0</span>
                 </h1>
-                <p class="text-xs text-slate-400">Extract, parse, validate schemas, and review low-confidence words for downstream LLMs</p>
+                <p class="text-xs text-slate-400">Extract, parse, and package documents into clean JSONC payloads for downstream LLMs</p>
             </div>
         </div>
         
         <!-- Grouped Action Toolbar (Buttons) -->
         <div class="flex items-center space-x-2.5">
-            <button id="schemaConfigBtn" onclick="toggleModal('schemaConfigModal', true)" class="inline-flex items-center justify-center space-x-2 px-4 py-2.5 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 text-xs font-semibold rounded-xl transition-all border border-indigo-500/40 hover:border-indigo-500 cursor-pointer shadow-sm">
-                <i data-lucide="file-code" class="w-4 h-4 text-indigo-400"></i>
-                <span>LLM Schema & Prompt</span>
-            </button>
             <button id="loadSavedBatchBtn" onclick="loadBatchFromDB()" class="inline-flex items-center justify-center space-x-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-750 text-slate-200 text-xs font-semibold rounded-xl transition-all border border-slate-700 hover:border-emerald-500/40 cursor-pointer shadow-sm">
                 <i data-lucide="database" class="w-4 h-4 text-emerald-400"></i>
                 <span>Load DB (<span id="dbCountBadge">0</span>)</span>
@@ -364,7 +359,7 @@
         </main>
     </div>
 
-    <!-- Low-Confidence Word Review Wizard Modal (Adobe Acrobat style) -->
+    <!-- Low-Confidence Review Wizard Modal (Adobe Acrobat style) -->
     <div id="lowConfModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center hidden">
         <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-7 shadow-2xl space-y-5 ring-1 ring-white/15 flex flex-col">
             <div class="flex items-center justify-between border-b border-slate-800 pb-4 shrink-0">
@@ -385,7 +380,6 @@
                     <span id="lowConfCounter" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono bg-amber-500/20 text-amber-300">Word 1 of 5</span>
                 </div>
 
-                <!-- Word Context Snippet / Image Canvas crop approximation -->
                 <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 flex flex-col items-center justify-center space-y-3 shadow-inner">
                     <div class="text-[11px] text-slate-400 uppercase tracking-wider font-semibold">Flagged Word Confidence</div>
                     <div class="flex items-center space-x-3">
@@ -413,66 +407,6 @@
         </div>
     </div>
 
-    <!-- LLM Schema & Prompt Configurator Modal -->
-    <div id="schemaConfigModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center hidden">
-        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl w-full p-7 shadow-2xl space-y-5 ring-1 ring-white/15 flex flex-col max-h-[90vh]">
-            <div class="flex items-center justify-between border-b border-slate-800 pb-4 shrink-0">
-                <h3 class="text-base font-bold text-white flex items-center gap-2.5">
-                    <div class="p-2 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
-                        <i data-lucide="file-code" class="w-5 h-5"></i>
-                    </div>
-                    LLM System Prompt & JSON Schema Studio
-                </h3>
-                <button onclick="toggleModal('schemaConfigModal', false)" class="inline-flex items-center justify-center text-slate-400 hover:text-slate-200 p-1.5 rounded-xl hover:bg-slate-800 cursor-pointer">
-                    <i data-lucide="x" class="w-4 h-4"></i>
-                </button>
-            </div>
-            
-            <div class="flex-1 overflow-y-auto space-y-4 text-xs text-slate-300">
-                <p class="text-slate-400">Configure your downstream LLM instructions and target JSON Schema. The app validates your schema syntax in real-time to ensure clean downstream parsing.</p>
-                
-                <div class="space-y-1.5">
-                    <label class="font-semibold text-slate-200 flex items-center justify-between">
-                        <span>Downstream System Prompt / Instructions</span>
-                        <span class="text-[10px] text-slate-500">Injected into JSONC metadata</span>
-                    </label>
-                    <textarea id="configSystemPrompt" class="w-full h-24 bg-slate-950 border border-slate-800 rounded-2xl p-3 text-xs text-slate-200 font-mono focus:outline-none focus:border-indigo-500 resize-none shadow-inner">You are an expert data extraction agent. Extract structured entities and records from the provided OCR and document text matching the attached JSON schema.</textarea>
-                </div>
-
-                <div class="space-y-1.5">
-                    <label class="font-semibold text-slate-200 flex items-center justify-between">
-                        <span>Target JSON Schema (Draft-07 / OpenAPI compatible)</span>
-                        <span id="schemaValidationStatus" class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20"><i data-lucide="check-circle" class="w-3 h-3 mr-1"></i> Valid JSON Schema</span>
-                    </label>
-                    <textarea id="configJsonSchema" oninput="validateJsonSchemaInput(this.value)" class="w-full h-40 bg-slate-950 border border-slate-800 rounded-2xl p-3 text-xs text-amber-300 font-mono focus:outline-none focus:border-indigo-500 resize-none shadow-inner">{
-  "type": "object",
-  "properties": {
-    "documentTitle": { "type": "string" },
-    "extractedEntities": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "key": { "type": "string" },
-          "value": { "type": "string" }
-        }
-      }
-    }
-  },
-  "required": ["documentTitle", "extractedEntities"]
-}</textarea>
-                </div>
-            </div>
-
-            <div class="pt-3 border-t border-slate-800 flex items-center justify-between shrink-0">
-                <span class="text-[11px] text-slate-400">Schemas are validated before export</span>
-                <button onclick="saveSchemaConfig()" class="inline-flex items-center justify-center px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-xl transition-all shadow-md shadow-indigo-600/20 cursor-pointer">
-                    Save & Validate
-                </button>
-            </div>
-        </div>
-    </div>
-
     <!-- JSONC Preview Modal -->
     <div id="jsoncPreviewModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center hidden">
         <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-3xl w-full p-7 shadow-2xl space-y-4 ring-1 ring-white/15 flex flex-col max-h-[85vh]">
@@ -486,7 +420,7 @@
                 </button>
             </div>
             <div class="flex-1 overflow-hidden flex flex-col space-y-2">
-                <p class="text-xs text-slate-400">Self-describing LLM pipeline package with embedded prompt, validated JSON schema, and extracted text:</p>
+                <p class="text-xs text-slate-400">Self-describing document package with extracted text and metadata:</p>
                 <textarea id="jsoncPreviewArea" readonly class="w-full flex-1 bg-slate-950 border border-slate-800 rounded-2xl p-4 text-xs text-amber-200 font-mono focus:outline-none resize-none shadow-inner leading-relaxed"></textarea>
             </div>
             <div class="pt-3 border-t border-slate-800 flex items-center justify-between shrink-0">
@@ -526,7 +460,7 @@
                     <div class="p-2 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
                         <i data-lucide="info" class="w-5 h-5"></i>
                     </div>
-                    Bulk LLM Pipeline Studio Guide
+                    Bulk OCR Studio Guide
                 </h3>
                 <button onclick="toggleModal('helpModal', false)" class="inline-flex items-center justify-center text-slate-400 hover:text-slate-200 p-1.5 rounded-xl hover:bg-slate-800 cursor-pointer">
                     <i data-lucide="x" class="w-4 h-4"></i>
@@ -544,8 +478,8 @@
                 </div>
             </div>
             <div class="pt-3 border-t border-slate-800 flex justify-end">
-                <button onclick="toggleModal('helpModal', false)" class="inline-flex items-center justify-center px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-xl transition-all shadow-md shadow-indigo-600/20 cursor-pointer">
-                    Got it, let's start
+                <button onclick="toggleModal('helpModal', false)" class="inline-flex items-center justify-center px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-xl transition-all shadow-md cursor-pointer">
+                    Got it
                 </button>
             </div>
         </div>
@@ -1130,7 +1064,7 @@
             return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
         }
 
-        // Robust Batch OCR & Parser Engine with IndexedDB Auto-Update & Confidence Extraction
+        // Robust Batch OCR & Parser Engine with Confidence Extraction
         async function startBatchOCR() {
             if (isProcessing) return;
             const pendingFiles = fileQueue.filter(f => f.status === 'pending' || f.status === 'error');
@@ -1213,7 +1147,6 @@
                             const ret = await currentWorker.recognize(item.file);
                             item.text = ret && ret.data && ret.data.text ? ret.data.text.trim() : '';
                             
-                            // Extract words with confidence < 75% for review wizard
                             if (ret && ret.data && ret.data.words) {
                                 lowConfList = ret.data.words
                                     .filter(w => w.confidence < 75 && w.text && w.text.trim().length > 0)
@@ -1430,7 +1363,7 @@
             filteredQueue.forEach(item => {
                 let statusBadge = '';
                 if (item.status === 'pending') statusBadge = '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium text-slate-400 bg-slate-800">Pending</span>';
-                else if (item.status === 'processing') statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 animate-pulse">Processing ' + Math.round((item.progress || 0) * 100) + '%</span>';
+                else if (item.status === 'processing') statusBadge = `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 animate-pulse">Processing ${Math.round((item.progress || 0) * 100)}%</span>`;
                 else if (item.status === 'completed') statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20">Completed</span>';
                 else if (item.status === 'error') statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold text-red-400 bg-red-500/10 border border-red-500/30">Error</span>';
 
@@ -1494,7 +1427,6 @@
             document.getElementById('inspectorMetaSize').textContent = `${formatBytes(item.size)}`;
             document.getElementById('inspectorTextarea').value = item.text || '';
 
-            // Show or hide low-confidence review button
             const reviewTrigger = document.getElementById('inspectorReviewTrigger');
             const reviewBtnText = document.getElementById('inspectorReviewBtnText');
             if (item.lowConfidenceWords && item.lowConfidenceWords.length > 0) {
@@ -1712,68 +1644,23 @@
             showToast('JSON export downloaded', 'code');
         }
 
-        // Validate JSON Schema
-        function validateJsonSchemaInput(schemaString) {
-            const statusEl = document.getElementById('schemaValidationStatus');
-            try {
-                const parsed = JSON.parse(schemaString);
-                if (typeof parsed !== 'object' || parsed === null) {
-                    throw new Error('Schema must be a JSON object');
-                }
-                statusEl.className = 'inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20';
-                statusEl.innerHTML = '<i data-lucide="check-circle" class="w-3 h-3 mr-1"></i> Valid JSON Schema';
-                refreshIcons();
-                return true;
-            } catch (e) {
-                statusEl.className = 'inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold text-red-400 bg-red-500/10 border border-red-500/20';
-                statusEl.innerHTML = '<i data-lucide="alert-circle" class="w-3 h-3 mr-1"></i> Invalid JSON Syntax';
-                refreshIcons();
-                return false;
-            }
-        }
-
-        function saveSchemaConfig() {
-            const schemaText = document.getElementById('configJsonSchema').value.trim();
-            if (!validateJsonSchemaInput(schemaText)) {
-                showToast('Please fix JSON schema syntax errors before saving', 'alert-circle');
-                return;
-            }
-            showToast('LLM prompt & validated JSON schema saved for JSONC exports', 'check-circle');
-            toggleModal('schemaConfigModal', false);
-        }
-
-        // Generate JSONC string with validated LLM Schema & Prompt
+        // Generate JSONC string
         function generateJsoncString() {
             const completedItems = fileQueue.filter(f => f.status === 'completed');
-            const systemPrompt = document.getElementById('configSystemPrompt').value.trim();
-            const jsonSchemaText = document.getElementById('configJsonSchema').value.trim();
-            
-            let parsedSchema = {};
-            try {
-                parsedSchema = JSON.parse(jsonSchemaText);
-            } catch(e) {
-                parsedSchema = { rawSchemaString: jsonSchemaText };
-            }
 
             let jsonc = `{\n`;
             jsonc += `  // ====================================================================\n`;
-            jsonc += `  // BULK DOCUMENT STUDIO - LLM PIPELINE JSONC EXPORT\n`;
-            jsonc += `  // Packaged with System Prompt & Validated JSON Schema for Downstream LLMs\n`;
+            jsonc += `  // BULK DOCUMENT STUDIO - RAW LLM PIPELINE JSONC EXPORT\n`;
+            jsonc += `  // Packaged with extracted text & metadata for downstream LLM schema extraction\n`;
             jsonc += `  // Generated: ${new Date().toLocaleString()}\n`;
             jsonc += `  // ====================================================================\n\n`;
             jsonc += `  "metadata": {\n`;
-            jsonc += `    "app": "Bulk OCR & LLM Pipeline Studio",\n`;
-            jsonc += `    "version": "v1.7.0",\n`;
+            jsonc += `    "app": "Bulk OCR Studio",\n`;
+            jsonc += `    "version": "v1.8.0",\n`;
             jsonc += `    "exportTimestamp": "${new Date().toISOString()}",\n`;
             jsonc += `    "totalItems": ${fileQueue.length},\n`;
             jsonc += `    "completedItems": ${completedItems.length}\n`;
             jsonc += `  },\n\n`;
-            
-            jsonc += `  // Downstream LLM Extraction Instructions\n`;
-            jsonc += `  "llmPrompt": ${JSON.stringify(systemPrompt)},\n\n`;
-            jsonc += `  // Validated Target JSON Schema for LLM Structured Output validation\n`;
-            jsonc += `  "jsonSchema": ${JSON.stringify(parsedSchema, null, 2)},\n\n`;
-
             jsonc += `  "documents": [\n`;
 
             completedItems.forEach((item, idx) => {
