@@ -504,6 +504,40 @@
             pages: 'id, name, status, size, type'
         });
 
+        // Auto-load DB startup
+
+        // Auto-load saved batch from IndexedDB on startup
+        window.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const savedPages = await db.pages.toArray();
+                if (savedPages && savedPages.length > 0) {
+                    fileQueue = savedPages.map(p => ({
+                        id: p.id,
+                        file: p.blob || new File([''], p.name, { type: p.type || 'text/plain' }),
+                        name: p.name,
+                        path: p.name,
+                        size: p.size,
+                        type: p.type,
+                        isOcrNeeded: p.status !== 'completed',
+                        status: p.status || 'completed',
+                        progress: p.status === 'completed' ? 1 : 0,
+                        text: p.text || '',
+                        lowConfidenceWords: p.lowConfidenceWords || [],
+                        error: null,
+                        previewUrl: p.blob ? URL.createObjectURL(p.blob) : ''
+                    }));
+                    updateQueueUI();
+                    renderResultsGrid();
+                    updateDbCountBadge();
+                    updateTokenEstimate();
+                    updateExportButtonsState();
+                    showToast(`Restored ${fileQueue.length} items from previous session DB`, 'database');
+                }
+            } catch(e) {
+                console.error('Failed to auto-load DB session:', e);
+            }
+        });
+
         // State management
         let fileQueue = [];
         let isProcessing = false;
@@ -613,30 +647,33 @@
             e.stopPropagation();
             document.getElementById('dropZone').classList.remove('border-indigo-500', 'bg-slate-900');
             
-            const items = e.dataTransfer.items;
             const filesArray = [];
-
-            if (items && items.length > 0) {
+            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                for (let i = 0; i < e.dataTransfer.files.length; i++) {
+                    const file = e.dataTransfer.files[i];
+                    if (isSupportedFile(file)) filesArray.push(file);
+                }
+            }
+            
+            const items = e.dataTransfer.items;
+            if (items && items.length > 0 && filesArray.length === 0) {
                 showLoadingSpinner('Processing Drop', 'Traversing dropped files and folders...');
                 try {
                     for (let i = 0; i < items.length; i++) {
                         const item = items[i].webkitGetAsEntry ? items[i].webkitGetAsEntry() : null;
                         if (item) {
                             await traverseFileTreeAsync(item, filesArray);
-                        } else {
-                            const file = items[i].getAsFile();
-                            if (file && isSupportedFile(file)) filesArray.push(file);
                         }
                     }
                 } finally {
                     hideLoadingSpinner();
                 }
-                if (filesArray.length > 0) {
-                    processIncomingFiles(filesArray);
-                }
-            } else if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-                const files = Array.from(e.dataTransfer.files).filter(isSupportedFile);
-                processIncomingFiles(files);
+            }
+
+            if (filesArray.length > 0) {
+                processIncomingFiles(filesArray);
+            } else {
+                showToast('No supported files or folders found', 'alert-circle');
             }
         }
 
@@ -899,6 +936,7 @@
                 showToast(`Added ${addedCount} items to queue & IndexedDB`, 'check-circle');
                 updateQueueUI();
                 renderResultsGrid();
+                updateExportButtonsState();
                 document.getElementById('startBtn').removeAttribute('disabled');
             }
         }
@@ -935,6 +973,7 @@
 
                 updateQueueUI();
                 renderResultsGrid();
+                updateExportButtonsState();
                 document.getElementById('startBtn').removeAttribute('disabled');
                 
                 const completedCount = fileQueue.filter(f => f.status === 'completed').length;
@@ -1191,6 +1230,7 @@
 
                     updateQueueUI();
                     renderResultsGrid();
+                    updateExportButtonsState();
                     updateGlobalProgress();
                     updateTokenEstimate();
                 }
@@ -1305,6 +1345,18 @@
         }
 
         // Results Rendering, Search & RegEx Support
+        
+        function highlightMatches(text, regex) {
+            if (!text) return '<span class="text-slate-600 italic">No text extracted yet...</span>';
+            const escaped = escapeHtml(text);
+            if (!regex) return escaped;
+            try {
+                return escaped.replace(regex, match => `<mark class="bg-amber-500/40 text-amber-200 font-bold rounded px-1 py-0.5 border border-amber-500/50">${match}</mark>`);
+            } catch(e) {
+                return escaped;
+            }
+        }
+
         function renderResultsGrid() {
             const container = document.getElementById('resultsContainer');
             const searchInput = document.getElementById('searchInput');
@@ -1376,7 +1428,7 @@
                 else if (item.status === 'completed') statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20">Completed</span>';
                 else if (item.status === 'error') statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold text-red-400 bg-red-500/10 border border-red-500/30">Error</span>';
 
-                const displayText = item.text ? escapeHtml(item.text) : '<span class="text-slate-600 italic">No text extracted yet...</span>';
+                const displayText = highlightMatches(item.text, regex);
                 const lowConfCount = item.lowConfidenceWords ? item.lowConfidenceWords.length : 0;
 
                 html += `
@@ -1654,6 +1706,28 @@
         }
 
         // Generate JSONC string
+        
+        function updateExportButtonsState() {
+            const completedItems = fileQueue.filter(f => f.status === 'completed');
+            const hasCompleted = completedItems.length > 0;
+            const zipBtn = document.getElementById('exportZipBtn');
+            const txtBtn = document.getElementById('exportTxtBtn');
+            const jsonBtn = document.getElementById('exportJsonBtn');
+            const jsoncBtn = document.getElementById('exportJsoncBtn');
+            const previewBtn = document.getElementById('previewJsoncModalBtn');
+            
+            [zipBtn, txtBtn, jsonBtn, jsoncBtn, previewBtn].forEach(btn => {
+                if (!btn) return;
+                if (hasCompleted) {
+                    btn.removeAttribute('disabled');
+                    btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                } else {
+                    btn.setAttribute('disabled', 'true');
+                    btn.classList.add('opacity-50', 'cursor-not-allowed');
+                }
+            });
+        }
+
         function generateJsoncString() {
             const completedItems = fileQueue.filter(f => f.status === 'completed');
 
