@@ -552,9 +552,12 @@
 
     <!-- Application Script Logic -->
     <script>
-        // Configure PDF.js worker locally from vendor
+        // Initialize Tesseract worker locally from vendor with offline langPath
+        if (typeof Tesseract !== 'undefined') {
+            // Configure PDF.js worker locally from vendor
         if (typeof pdfjsLib !== 'undefined') {
             pdfjsLib.GlobalWorkerOptions.workerSrc = './vendor/pdf.worker.min.js';
+        }
         }
 
         // Initialize Dexie.js IndexedDB database
@@ -1168,10 +1171,11 @@
 
             try {
                 if (needsOcr) {
-                    showLoadingSpinner('Initializing Tesseract OCR', 'Loading local worker model...');
-                    // Configure Tesseract to use local vendored worker path for offline execution
+                    showLoadingSpinner('Initializing Tesseract OCR', 'Loading local worker model and offline language data...');
+                    // Configure Tesseract to use local vendored worker path and local offline langs folder
                     currentWorker = await Tesseract.createWorker(lang, 1, {
                         workerPath: './vendor/worker.min.js',
+                        langPath: './vendor/langs',
                         logger: m => {
                             if (m && m.status) {
                                 statusTextEl.textContent = `${m.status} (${Math.round((m.progress || 0) * 100)}%)`;
