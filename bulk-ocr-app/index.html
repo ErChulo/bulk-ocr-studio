@@ -86,7 +86,7 @@
                     Bulk OCR & LLM Studio 
                     <!-- Pill / Badge Styling (Distinct from buttons) -->
                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold tracking-wider uppercase bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">100% Client-Side</span>
-                    <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-mono font-medium bg-slate-800 text-slate-300 border border-slate-700">v1.6.0</span>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-mono font-medium bg-slate-800 text-slate-300 border border-slate-700">v1.7.0</span>
                 </h1>
                 <p class="text-xs text-slate-400">Extract, parse, validate schemas, and review low-confidence words for downstream LLMs</p>
             </div>
@@ -1545,17 +1545,13 @@
             const item = fileQueue.find(f => f.id === activeLowConfItemId);
 
             if (item && item.text) {
-                // Replace word in text (case-insensitive or exact substring replacement)
-                // For safety, replace exact instance or global if matching
                 const oldText = item.text;
                 item.text = oldText.replace(new RegExp('\\b' + wordObj.text + '\\b', 'g'), correctedVal);
                 
-                // Update inspector textarea if active
                 if (activeInspectorId === item.id) {
                     document.getElementById('inspectorTextarea').value = item.text;
                 }
 
-                // Update IndexedDB
                 db.pages.update(item.id, { text: item.text });
             }
 
@@ -1767,7 +1763,7 @@
             jsonc += `  // ====================================================================\n\n`;
             jsonc += `  "metadata": {\n`;
             jsonc += `    "app": "Bulk OCR & LLM Pipeline Studio",\n`;
-            jsonc += `    "version": "v1.6.0",\n`;
+            jsonc += `    "version": "v1.7.0",\n`;
             jsonc += `    "exportTimestamp": "${new Date().toISOString()}",\n`;
             jsonc += `    "totalItems": ${fileQueue.length},\n`;
             jsonc += `    "completedItems": ${completedItems.length}\n`;
