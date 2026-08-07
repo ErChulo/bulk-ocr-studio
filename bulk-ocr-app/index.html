@@ -981,8 +981,8 @@
         }
 
         function isSupportedFile(file) {
-            const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/bmp', 'image/tiff', 'image/gif', 'application/pdf', 'text/plain', 'text/csv', 'text/markdown', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel'];
-            return validTypes.includes(file.type) || /\.(png|jpe?g|webp|bmp|tiff|gif|pdf|txt|csv|md|xlsx|xls)$/i.test(file.name);
+            const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/bmp', 'image/tiff', 'image/gif', 'application/pdf', 'text/plain', 'text/csv', 'text/markdown', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/msword'];
+            return validTypes.includes(file.type) || /\.(png|jpe?g|webp|bmp|tiff|gif|pdf|txt|csv|md|xlsx|xls|xlsm|xlsb|doc|docx|dotm)$/i.test(file.name);
         }
 
         function handleFileSelection(e) {
