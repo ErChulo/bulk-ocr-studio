@@ -565,7 +565,7 @@
 
     <!-- JSONC Preview Modal -->
     <div id="jsoncPreviewModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center hidden">
-        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-3xl w-full p-7 shadow-2xl space-y-4 ring-1 ring-white/15 flex flex-col max-h-[85vh]">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-5xl w-full p-7 shadow-2xl space-y-4 ring-1 ring-white/15 flex flex-col h-[92vh]">
             <div class="flex items-center justify-between border-b border-slate-800 pb-3.5 shrink-0">
                 <h3 class="text-sm font-bold text-white flex items-center gap-2">
                     <i data-lucide="message-square-code" class="w-5 h-5 text-amber-400"></i>
@@ -1975,18 +1975,47 @@
 
             if (item && item.text) {
                 const oldText = item.text;
-                item.text = oldText.replace(new RegExp('\\b' + wordObj.text + '\\b', 'g'), correctedVal);
+                let escapedWord = wordObj.text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                let regex = new RegExp('\\b' + escapedWord + '\\b', 'g');
+                if (!regex.test(oldText)) {
+                    regex = new RegExp(escapedWord, 'g');
+                }
+                item.text = oldText.replace(regex, correctedVal);
                 
+                // Remove reviewed word from lowConfidenceWords so badge clears upon completion
+                item.lowConfidenceWords.splice(currentLowConfIndex, 1);
+
                 if (activeInspectorId === item.id) {
                     document.getElementById('inspectorTextarea').value = item.text;
                 }
 
-                db.pages.update(item.id, { text: item.text });
+                db.pages.update(item.id, { text: item.text, lowConfidenceWords: item.lowConfidenceWords });
             }
 
             currentLowConfIndex++;
-            showCurrentLowConfWord();
+            
+            if (currentLowConfIndex >= activeLowConfWords.length) {
+                closeLowConfWizard();
+                showToast('All low-confidence words reviewed & saved!', 'check-circle');
+                renderResultsGrid();
+                updateQueueUI();
+                if (activeInspectorId) inspectFile(activeInspectorId);
+            } else {
+                showCurrentLowConfWord();
+            }
             updateTokenEstimate();
+        }
+
+        function skipLowConfWord() {
+            currentLowConfIndex++;
+            if (currentLowConfIndex >= activeLowConfWords.length) {
+                closeLowConfWizard();
+                showToast('Review completed', 'check-circle');
+                renderResultsGrid();
+                updateQueueUI();
+            } else {
+                showCurrentLowConfWord();
+            }
         }
 
         function skipLowConfWord() {
