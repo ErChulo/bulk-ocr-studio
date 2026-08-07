@@ -1768,16 +1768,15 @@
             document.getElementById('inspectorMetaSize').textContent = `${formatBytes(item.size)}`;
             document.getElementById('inspectorTextarea').value = item.text || '';
 
-            // Set VS Code style icon badge based on file extension
+                        // Set rich, colorful VS Code / Material style SVG file icons
             const ext = item.name.split('.').pop().toLowerCase();
             const iconContainer = document.getElementById('inspectorVsCodeIcon');
             const typeLabel = document.getElementById('inspectorDocTypeLabel');
             const docBadge = document.getElementById('inspectorDocBadge');
             const imgEl = document.getElementById('inspectorImage');
             
-            typeLabel.textContent = `${ext.toUpperCase()} File`;
+            typeLabel.textContent = `${ext.toUpperCase()} Document`;
 
-            // If it's a non-image file (xlsx, xls, csv, txt, md) or has thumbnail placeholder, show docBadge
             if (['xlsx', 'xls', 'csv', 'txt', 'md'].includes(ext) || (item.type && !item.type.startsWith('image/'))) {
                 docBadge.classList.remove('hidden');
                 imgEl.classList.add('hidden');
@@ -1786,26 +1785,28 @@
                 imgEl.classList.remove('hidden');
             }
 
-            let iconBg = 'bg-slate-800 text-slate-300';
-            let iconHtml = '<i data-lucide="file" class="w-7 h-7"></i>';
+            let svgIcon = '';
+            let containerBg = 'bg-slate-900 border-slate-700';
 
-            if (['png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp'].includes(ext)) {
-                iconBg = 'bg-purple-600/20 text-purple-400 border-purple-500/30';
-                iconHtml = '<i data-lucide="file-image" class="w-7 h-7"></i>';
-            } else if (ext === 'pdf') {
-                iconBg = 'bg-red-600/20 text-red-400 border-red-500/30';
-                iconHtml = '<i data-lucide="file-text" class="w-7 h-7"></i>';
+            if (ext === 'pdf') {
+                containerBg = 'bg-red-500/15 border-red-500/40 shadow-red-500/20';
+                svgIcon = `<svg class="w-10 h-10 text-red-400 drop-shadow-md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15h6"/><path d="M9 11h6"/></svg>`;
             } else if (['xlsx', 'xls', 'csv'].includes(ext)) {
-                iconBg = 'bg-emerald-600/20 text-emerald-400 border-emerald-500/30';
-                iconHtml = '<i data-lucide="sheet" class="w-7 h-7"></i>';
+                containerBg = 'bg-emerald-500/15 border-emerald-500/40 shadow-emerald-500/20';
+                svgIcon = `<svg class="w-10 h-10 text-emerald-400 drop-shadow-md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/><line x1="10" y1="9" x2="10" y2="9.01"/></svg>`;
+            } else if (['png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp'].includes(ext)) {
+                containerBg = 'bg-purple-500/15 border-purple-500/40 shadow-purple-500/20';
+                svgIcon = `<svg class="w-10 h-10 text-purple-400 drop-shadow-md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`;
             } else if (['txt', 'md'].includes(ext)) {
-                iconBg = 'bg-blue-600/20 text-blue-400 border-blue-500/30';
-                iconHtml = '<i data-lucide="file-code" class="w-7 h-7"></i>';
+                containerBg = 'bg-blue-500/15 border-blue-500/40 shadow-blue-500/20';
+                svgIcon = `<svg class="w-10 h-10 text-blue-400 drop-shadow-md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>`;
+            } else {
+                containerBg = 'bg-amber-500/15 border-amber-500/40 shadow-amber-500/20';
+                svgIcon = `<svg class="w-10 h-10 text-amber-400 drop-shadow-md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`;
             }
 
-            iconContainer.className = `w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg border \${iconBg}`;
-            iconContainer.innerHTML = iconHtml;
-            refreshIcons();
+            iconContainer.className = `w-16 h-16 rounded-2xl flex items-center justify-center shadow-xl border ${containerBg} transition-all`;
+            iconContainer.innerHTML = svgIcon;
 
             const reviewTrigger = document.getElementById('inspectorReviewTrigger');
             const reviewBtnText = document.getElementById('inspectorReviewBtnText');
