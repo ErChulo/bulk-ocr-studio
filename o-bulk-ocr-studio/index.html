@@ -1489,17 +1489,18 @@
                 if (needsOcr) {
                     showLoadingSpinner('Initializing Tesseract OCR', 'Loading language model data...');
                     const isFileProtocol = window.location.protocol === 'file:';
-                    const workerBlobUrl = URL.createObjectURL(new Blob([`importScripts(new URL('./worker.min.js', window.location.href).href);`], { type: 'application/javascript' }));
                     const tesseractOpts = {
-                        workerPath: workerBlobUrl,
-                        corePath: './vendor/',
-                        langPath: './vendor/langs',
                         logger: m => {
                             if (m && m.status) {
                                 statusTextEl.textContent = `${m.status} (${Math.round((m.progress || 0) * 100)}%)`;
                             }
                         }
                     };
+                    if (isFileProtocol) {
+                        // Under file:// protocol, avoid fetching external worker script over disk (CORS/origin null error). Use default blob worker or omit workerPath.
+                        delete tesseractOpts.workerPath;
+                        tesseractOpts.workerBlobURL = true;
+                    }
                     currentWorker = await Tesseract.createWorker(lang, 1, tesseractOpts);
                     hideLoadingSpinner();
                 }
