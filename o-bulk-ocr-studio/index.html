@@ -818,7 +818,7 @@
             fileQueue.forEach(item => {
                 if (!item.text) return;
                 pbgcDetectors.forEach(det => {
-                    const rx = new RegExp('\\b' + det.pattern + '\\b', det.flags);
+                    const rx = det.regex;
                     let match;
                     while ((match = rx.exec(item.text)) !== null) {
                         const val = match[0];
