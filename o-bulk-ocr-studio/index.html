@@ -643,6 +643,36 @@
 
     <!-- Application Script Logic -->
     <script>
+        // Delayed Spinner Management
+        // spinnerTimeout declared at top
+        function showLoadingSpinner(title = 'Processing...', subtitle = 'Please wait while we parse documents and prepare items.') {
+            if (spinnerTimeout) clearTimeout(spinnerTimeout);
+            spinnerTimeout = setTimeout(() => {
+                const titleEl = document.getElementById('loadingTitle');
+                const subEl = document.getElementById('loadingSubtitle');
+                if (titleEl) titleEl.textContent = title;
+                if (subEl) subEl.textContent = subtitle;
+                const modal = document.getElementById('loadingModal');
+                if (modal) {
+                    modal.classList.add('flex');
+                    modal.classList.remove('hidden');
+                }
+                refreshIcons();
+            }, 500);
+        }
+
+        function hideLoadingSpinner() {
+            if (spinnerTimeout) {
+                clearTimeout(spinnerTimeout);
+                spinnerTimeout = null;
+            }
+            const modal = document.getElementById('loadingModal');
+            if (modal) {
+                modal.classList.remove('flex');
+                modal.classList.add('hidden');
+            }
+        }
+
         // Configure PDF.js worker
         if (typeof pdfjsLib !== 'undefined') {
             pdfjsLib.GlobalWorkerOptions.workerSrc = './vendor/pdf.worker.min.js';
@@ -955,7 +985,7 @@
         }
 
         // Delayed Spinner Management
-        let spinnerTimeout = null;
+        // spinnerTimeout declared at top
         function showLoadingSpinner(title = 'Processing...', subtitle = 'Please wait while we parse documents and prepare items.') {
             if (spinnerTimeout) clearTimeout(spinnerTimeout);
             spinnerTimeout = setTimeout(() => {
