@@ -142,7 +142,7 @@
                     </div>
 
                     <input type="file" id="folderInput" webkitdirectory directory multiple class="hidden" onchange="handleFileSelection(event)">
-                    <input type="file" id="fileInput" multiple accept="image/*,.pdf,.txt,.csv,.xlsx,.xls,.md" class="hidden" onchange="handleFileSelection(event)">
+                    <input type="file" id="fileInput" multiple accept="image/*,.pdf,.txt,.csv,.xlsx,.xls,.xlsm,.xlsb,.md" class="hidden" onchange="handleFileSelection(event)">
 
                     <div id="dropZone" class="border-2 border-dashed border-slate-700 hover:border-indigo-500 rounded-2xl p-3 text-center transition-all bg-slate-950/60 hover:bg-slate-950 cursor-pointer group/drop"
                          ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" onclick="document.getElementById('fileInput').click()">
@@ -307,10 +307,10 @@
                         <div id="inspectorPreviewContainer" class="bg-slate-950 rounded-2xl border border-slate-800 p-3 flex items-center justify-center h-52 relative overflow-hidden group shadow-inner">
                             <img id="inspectorImage" src="" alt="Preview" class="max-h-full max-w-full object-contain rounded-xl shadow">
                             <div id="inspectorDocBadge" class="hidden absolute inset-0 flex flex-col items-center justify-center bg-slate-950/95 text-slate-300 p-4 text-center space-y-2">
-                                <div id="inspectorVsCodeIcon" class="w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg border border-white/10">
-                                    <!-- VS Code style extension icon injected dynamically -->
+                                <div class="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shadow-inner">
+                                    <i data-lucide="file-text" class="w-6 h-6"></i>
                                 </div>
-                                <span class="text-xs font-bold font-mono tracking-wide" id="inspectorDocTypeLabel">Document</span>
+                                <span class="text-xs font-bold font-mono tracking-wide text-slate-200" id="inspectorDocTypeLabel">Document File</span>
                             </div>
                             <div class="absolute bottom-3 right-3 bg-slate-900/90 backdrop-blur-md px-2.5 py-1 rounded-xl text-[10px] text-slate-300 font-mono border border-slate-700 shadow" id="inspectorMetaSize"></div>
                         </div>
@@ -1061,7 +1061,7 @@
                             showToast(`Failed to parse PDF: ${file.name}`, 'alert-circle');
                         }
                     } 
-                    else if (ext === 'xlsx' || ext === 'xls') {
+                    else if (['xlsx', 'xls', 'xlsm', 'xlsb'].includes(ext)) {
                         try {
                             const arrayBuffer = await file.arrayBuffer();
                             const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array' });
