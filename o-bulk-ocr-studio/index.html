@@ -138,7 +138,7 @@
                     </div>
 
                     <input type="file" id="folderInput" webkitdirectory directory multiple class="hidden" onchange="handleFileSelection(event)">
-                    <input type="file" id="fileInput" multiple accept="image/*,.pdf,.txt,.csv,.xlsx,.xls,.xlsm,.xlsb,.doc,.docx,.dotm,.md" class="hidden" onchange="handleFileSelection(event)">
+                    <input type="file" id="fileInput" multiple accept="image/*,.pdf,.txt,.csv,.xlsx,.xls,.xlsm,.xlsb,.doc,.docx,.dotm,.docm,.md" class="hidden" onchange="handleFileSelection(event)">
 
                     <div id="dropZone" class="border-2 border-dashed border-slate-700 hover:border-indigo-500 rounded-2xl p-3 text-center transition-all bg-slate-950/60 hover:bg-slate-950 cursor-pointer group/drop"
                          ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" onclick="document.getElementById('fileInput').click()">
@@ -976,7 +976,7 @@
 
         function isSupportedFile(file) {
             const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/bmp', 'image/tiff', 'image/gif', 'application/pdf', 'text/plain', 'text/csv', 'text/markdown', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/msword'];
-            return validTypes.includes(file.type) || /\.(png|jpe?g|webp|bmp|tiff|gif|pdf|txt|csv|md|xlsx|xls|xlsm|xlsb|doc|docx|dotm)$/i.test(file.name);
+            return validTypes.includes(file.type) || /\.(png|jpe?g|webp|bmp|tiff|gif|pdf|txt|csv|md|xlsx|xls|xlsm|xlsb|doc|docx|dotm|docm)$/i.test(file.name);
         }
 
         function handleFileSelection(e) {
@@ -1057,7 +1057,7 @@
                             showToast(`Failed to parse PDF: ${file.name}`, 'alert-circle');
                         }
                     } 
-                    else if (['docx', 'doc', 'dotm'].includes(ext)) {
+                    else if (['docx', 'doc', 'dotm', 'docm'].includes(ext)) {
                         try {
                             const arrayBuffer = await file.arrayBuffer();
                             let extractedText = '';
