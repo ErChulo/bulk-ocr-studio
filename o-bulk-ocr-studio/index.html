@@ -12,7 +12,7 @@
     <script src="./vendor/mammoth.browser.min.js"></script>
     <script src="./vendor/xlsx.full.min.js"></script>
     <script src="./vendor/jszip.min.js"></script>
-    <script src="./vendor/dexie.js"></script>
+    <!-- Native Pure IndexedDB Wrapper (Zero external DB dependencies) -->
     <script src="./vendor/lucide.js"></script>
     <script>
         // Suppress noisy PDF.js font warnings in console
@@ -56,11 +56,11 @@
         }
     </style>
 </head>
-<body class="h-full bg-slate-950 text-slate-100 flex flex-col font-sans antialiased overflow-hidden">
+<body class="h-full bg-black text-slate-100 flex flex-col font-sans antialiased overflow-hidden">
 
     <!-- Desktop Screen Enforcement Modal (< 1024px) -->
-    <div id="desktopOnlyModal" class="fixed inset-0 bg-slate-950/95 backdrop-blur-2xl z-50 flex items-center justify-center p-6 hidden lg:hidden">
-        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-8 shadow-2xl text-center space-y-4 ring-1 ring-white/10">
+    <div id="desktopOnlyModal" class="fixed inset-0 bg-black/95 backdrop-blur-2xl z-50 flex items-center justify-center p-6 hidden lg:hidden">
+        <div class="bg-zinc-950 border border-slate-800 rounded-3xl max-w-md w-full p-8 shadow-2xl text-center space-y-4 ring-1 ring-white/10">
             <div class="w-16 h-16 rounded-3xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 mx-auto shadow-inner">
                 <i data-lucide="monitor" class="w-8 h-8"></i>
             </div>
@@ -72,7 +72,7 @@
     </div>
 
     <!-- Top Navigation -->
-    <header class="bg-slate-900 border-b border-slate-800 px-6 py-4 flex items-center justify-between shrink-0 shadow-xl">
+    <header class="bg-zinc-950 border-b border-slate-800 px-6 py-4 flex items-center justify-between shrink-0 shadow-xl">
         <div class="flex items-center space-x-3">
             <div class="bg-gradient-to-tr from-indigo-600 to-violet-600 p-2.5 rounded-2xl shadow-lg shadow-indigo-500/20 flex items-center justify-center text-white ring-1 ring-white/10">
                 <i data-lucide="scan-text" class="w-6 h-6"></i>
@@ -93,7 +93,7 @@
                 <i data-lucide="database" class="w-4 h-4 text-emerald-400"></i>
                 <span>Load DB (<span id="dbCountBadge">0</span>)</span>
             </button>
-            <button id="previewJsoncModalBtn" onclick="openJsoncPreviewModal()" disabled class="inline-flex items-center justify-center space-x-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-750 disabled:bg-slate-900 disabled:text-slate-600 text-amber-300 text-xs font-semibold rounded-xl transition-all border border-slate-700 hover:border-amber-500/40 cursor-pointer shadow-sm disabled:cursor-not-allowed">
+            <button id="previewJsoncModalBtn" onclick="openJsoncPreviewModal()" disabled class="inline-flex items-center justify-center space-x-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-750 disabled:bg-zinc-950 disabled:text-slate-600 text-amber-300 text-xs font-semibold rounded-xl transition-all border border-slate-700 hover:border-amber-500/40 cursor-pointer shadow-sm disabled:cursor-not-allowed">
                 <i data-lucide="code-2" class="w-4 h-4"></i>
                 <span>Preview JSONC</span>
             </button>
@@ -106,7 +106,7 @@
                 <span>Guide</span>
             </button>
             <div class="h-5 w-px bg-slate-800 mx-1"></div>
-            <div class="text-xs text-slate-300 flex items-center gap-2 bg-slate-950/80 px-3.5 py-2 rounded-xl border border-slate-800 shadow-inner">
+            <div class="text-xs text-slate-300 flex items-center gap-2 bg-black/80 px-3.5 py-2 rounded-xl border border-slate-800 shadow-inner">
                 <span id="engineStatusIndicator" class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                 <span id="engineStatusText" class="font-medium">Ready</span>
             </div>
@@ -117,21 +117,21 @@
     <div class="flex-1 flex overflow-hidden">
         
         <!-- Left Sidebar: Controls & File Queue -->
-        <aside class="w-96 bg-slate-900/90 border-r border-slate-800 flex flex-col shrink-0">
+        <aside class="w-96 bg-zinc-950/90 border-r border-slate-800 flex flex-col shrink-0">
             
             <!-- Collapsible Inputs & Settings Accordion (Impeccable space saving) -->
-            <details class="group border-b border-slate-800 bg-slate-900 shrink-0" open>
-                <summary class="px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-300 cursor-pointer flex items-center justify-between hover:bg-slate-850 transition-colors select-none">
+            <details class="group border-b border-slate-800 bg-zinc-950 shrink-0" open>
+                <summary class="px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-300 cursor-pointer flex items-center justify-between hover:bg-zinc-900 transition-colors select-none">
                     <span class="flex items-center gap-2"><i data-lucide="sliders" class="w-4 h-4 text-indigo-400"></i> Inputs & OCR Settings</span>
                     <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 group-open:rotate-180 transition-transform"></i>
                 </summary>
-                <div class="p-4 pt-1 border-t border-slate-800/80 space-y-3 bg-slate-950/40">
+                <div class="p-4 pt-1 border-t border-slate-800/80 space-y-3 bg-black/40">
                     <div class="grid grid-cols-2 gap-2">
-                        <button onclick="document.getElementById('folderInput').click()" class="inline-flex flex-col items-center justify-center p-3 bg-slate-850 hover:bg-slate-800 border border-slate-700 hover:border-indigo-500/50 rounded-2xl transition-all group/btn text-center cursor-pointer shadow-sm">
+                        <button onclick="document.getElementById('folderInput').click()" class="inline-flex flex-col items-center justify-center p-3 bg-zinc-900 hover:bg-slate-800 border border-slate-700 hover:border-indigo-500/50 rounded-2xl transition-all group/btn text-center cursor-pointer shadow-sm">
                             <i data-lucide="folder-open" class="w-4 h-4 text-indigo-400 mb-1 group-hover/btn:scale-110 transition-transform"></i>
                             <span class="text-[11px] font-semibold text-slate-200">Select Folder</span>
                         </button>
-                        <button onclick="document.getElementById('fileInput').click()" class="inline-flex flex-col items-center justify-center p-3 bg-slate-850 hover:bg-slate-800 border border-slate-700 hover:border-indigo-500/50 rounded-2xl transition-all group/btn text-center cursor-pointer">
+                        <button onclick="document.getElementById('fileInput').click()" class="inline-flex flex-col items-center justify-center p-3 bg-zinc-900 hover:bg-slate-800 border border-slate-700 hover:border-indigo-500/50 rounded-2xl transition-all group/btn text-center cursor-pointer">
                             <i data-lucide="files" class="w-4 h-4 text-indigo-400 mb-1 group-hover/btn:scale-110 transition-transform"></i>
                             <span class="text-[11px] font-semibold text-slate-200">Select Files</span>
                         </button>
@@ -140,7 +140,7 @@
                     <input type="file" id="folderInput" webkitdirectory directory multiple class="hidden" onchange="handleFileSelection(event)">
                     <input type="file" id="fileInput" multiple accept="image/*,.pdf,.txt,.csv,.xlsx,.xls,.xlsm,.xlsb,.doc,.docx,.dotm,.docm,.md" class="hidden" onchange="handleFileSelection(event)">
 
-                    <div id="dropZone" class="border-2 border-dashed border-slate-700 hover:border-indigo-500 rounded-2xl p-3 text-center transition-all bg-slate-950/60 hover:bg-slate-950 cursor-pointer group/drop"
+                    <div id="dropZone" class="border-2 border-dashed border-slate-700 hover:border-indigo-500 rounded-2xl p-3 text-center transition-all bg-black/60 hover:bg-black cursor-pointer group/drop"
                          ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" onclick="document.getElementById('fileInput').click()">
                         <p class="text-[11px] text-slate-200 font-semibold">Drag & Drop files or folders here</p>
                         <p class="text-[9px] text-slate-400 mt-0.5">Images, PDFs, Spreadsheets, Text</p>
@@ -150,7 +150,7 @@
                         <label class="text-[11px] text-slate-300 font-medium flex justify-between">
                             <span>OCR Language</span>
                         </label>
-                        <select id="ocrLang" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors">
+                        <select id="ocrLang" class="w-full bg-zinc-950 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors">
                             <option value="eng">English (eng)</option>
                             <option value="spa">Spanish (spa)</option>
                             <option value="fra">French (fra)</option>
@@ -171,7 +171,7 @@
                             <i data-lucide="play" class="w-3 h-3 fill-current"></i>
                             <span id="startBtnText">Process</span>
                         </button>
-                        <button id="pauseBtn" onclick="pauseBatchOCR()" disabled class="inline-flex items-center justify-center space-x-1 py-2 px-3 bg-slate-800 hover:bg-slate-750 disabled:bg-slate-850 disabled:text-slate-600 text-slate-200 font-semibold text-xs rounded-xl transition-colors border border-slate-700 cursor-pointer disabled:cursor-not-allowed">
+                        <button id="pauseBtn" onclick="pauseBatchOCR()" disabled class="inline-flex items-center justify-center space-x-1 py-2 px-3 bg-slate-800 hover:bg-slate-750 disabled:bg-zinc-900 disabled:text-slate-600 text-slate-200 font-semibold text-xs rounded-xl transition-colors border border-slate-700 cursor-pointer disabled:cursor-not-allowed">
                             <i data-lucide="pause" class="w-3 h-3"></i>
                             <span>Pause</span>
                         </button>
@@ -180,7 +180,7 @@
             </details>
 
             <!-- Queue & Stats Header -->
-            <div class="px-4 py-3 bg-slate-850 flex items-center justify-between border-b border-slate-800">
+            <div class="px-4 py-3 bg-zinc-900 flex items-center justify-between border-b border-slate-800">
                 <div class="flex items-center space-x-2">
                     <h2 class="text-[11px] font-bold uppercase tracking-wider text-slate-300">Queue Items</h2>
                     <!-- Badge Styling -->
@@ -195,7 +195,7 @@
             <!-- File Queue List -->
             <div id="fileQueueList" class="flex-1 overflow-y-auto divide-y divide-slate-800/60 p-2 space-y-1">
                 <div class="text-center py-16 text-slate-500">
-                    <div class="w-12 h-12 rounded-2xl bg-slate-850 border border-slate-800 flex items-center justify-center mx-auto mb-3 text-slate-600 shadow-inner">
+                    <div class="w-12 h-12 rounded-2xl bg-zinc-900 border border-slate-800 flex items-center justify-center mx-auto mb-3 text-slate-600 shadow-inner">
                         <i data-lucide="inbox" class="w-6 h-6"></i>
                     </div>
                     <p class="text-xs font-semibold text-slate-400">No items selected</p>
@@ -204,28 +204,28 @@
             </div>
 
             <!-- Queue Summary Footer (Secondary details hidden under a tooltip / info icon modal) -->
-            <div class="p-3 bg-slate-950 border-t border-slate-800 text-xs text-slate-400 flex items-center justify-between shadow-inner">
+            <div class="p-3 bg-black border-t border-slate-800 text-xs text-slate-400 flex items-center justify-between shadow-inner">
                 <div class="flex flex-col space-y-0.5">
                     <span id="queueProgressText" class="font-medium text-slate-300">Progress: 0 / 0 items</span>
                     <span id="queueTimeText" class="font-mono text-[11px] text-slate-400">Elapsed: 0s</span>
                 </div>
-                <button onclick="toggleModal('statsInfoModal', true)" title="View Queue Stats & Token Estimates" class="inline-flex items-center justify-center p-2 rounded-xl bg-slate-900 hover:bg-slate-850 text-indigo-400 border border-slate-800 transition-all cursor-pointer shadow-sm">
+                <button onclick="toggleModal('statsInfoModal', true)" title="View Queue Stats & Token Estimates" class="inline-flex items-center justify-center p-2 rounded-xl bg-zinc-950 hover:bg-zinc-900 text-indigo-400 border border-slate-800 transition-all cursor-pointer shadow-sm">
                     <i data-lucide="info" class="w-4 h-4"></i>
                 </button>
             </div>
         </aside>
 
         <!-- Right Main Content Area -->
-        <main class="flex-1 flex flex-col bg-slate-950 overflow-hidden">
+        <main class="flex-1 flex flex-col bg-black overflow-hidden">
             
             <!-- Global Progress Bar -->
-            <div id="progressBarContainer" class="hidden bg-slate-900 border-b border-slate-800 px-6 py-3 flex items-center gap-4 shrink-0 shadow-md">
+            <div id="progressBarContainer" class="hidden bg-zinc-950 border-b border-slate-800 px-6 py-3 flex items-center gap-4 shrink-0 shadow-md">
                 <div class="flex-1">
                     <div class="flex justify-between text-xs mb-1.5 font-medium">
                         <span id="currentProcessingLabel" class="text-indigo-400 truncate">Processing...</span>
                         <span id="progressPercentage" class="text-slate-300 font-mono">0%</span>
                     </div>
-                    <div class="w-full bg-slate-950 rounded-full h-2.5 overflow-hidden border border-slate-800 p-0.5 shadow-inner">
+                    <div class="w-full bg-black rounded-full h-2.5 overflow-hidden border border-slate-800 p-0.5 shadow-inner">
                         <div id="progressBarFill" class="bg-gradient-to-r from-indigo-500 to-violet-500 h-full rounded-full transition-all duration-300" style="width: 0%"></div>
                     </div>
                 </div>
@@ -236,11 +236,11 @@
             </div>
 
             <!-- Toolbar & Export Actions -->
-            <div class="bg-slate-900/60 border-b border-slate-800 px-6 py-3 flex items-center justify-between shrink-0">
+            <div class="bg-zinc-950/60 border-b border-slate-800 px-6 py-3 flex items-center justify-between shrink-0">
                 <div class="flex items-center space-x-3">
                     <div class="relative flex items-center">
                         <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"></i>
-                        <input type="text" id="searchInput" oninput="filterResults()" placeholder="Search text (RegEx supported)..." class="bg-slate-950 border border-slate-750 rounded-xl pl-9 pr-20 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 w-80 shadow-inner transition-colors">
+                        <input type="text" id="searchInput" oninput="filterResults()" placeholder="Search text (RegEx supported)..." class="bg-black border border-slate-750 rounded-xl pl-9 pr-20 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 w-80 shadow-inner transition-colors">
                         <button onclick="toggleRegexMode()" id="regexToggleBtn" title="Toggle Regular Expression Search" class="absolute right-2 inline-flex items-center justify-center px-2 py-1 bg-slate-800 hover:bg-slate-750 text-slate-400 hover:text-indigo-300 text-[10px] font-mono rounded-lg border border-slate-700 transition-all cursor-pointer">
                             .* RegEx
                         </button>
@@ -251,19 +251,19 @@
                 
                 <!-- Grouped Export Action Buttons -->
                 <div class="flex items-center space-x-2">
-                    <button onclick="exportAllAsZip()" id="exportZipBtn" disabled class="inline-flex items-center justify-center space-x-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-900 disabled:text-slate-600 text-white text-xs font-semibold rounded-xl transition-all shadow-sm cursor-pointer disabled:cursor-not-allowed">
+                    <button onclick="exportAllAsZip()" id="exportZipBtn" disabled class="inline-flex items-center justify-center space-x-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-zinc-950 disabled:text-slate-600 text-white text-xs font-semibold rounded-xl transition-all shadow-sm cursor-pointer disabled:cursor-not-allowed">
                         <i data-lucide="file-archive" class="w-4 h-4"></i>
                         <span>ZIP</span>
                     </button>
-                    <button onclick="exportAllAsSingleTxt()" id="exportTxtBtn" disabled class="inline-flex items-center justify-center space-x-1.5 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-950 disabled:text-slate-600 text-slate-200 text-xs font-semibold rounded-xl transition-colors border border-slate-750 cursor-pointer disabled:cursor-not-allowed shadow-sm">
+                    <button onclick="exportAllAsSingleTxt()" id="exportTxtBtn" disabled class="inline-flex items-center justify-center space-x-1.5 px-3.5 py-2 bg-zinc-950 hover:bg-slate-800 disabled:bg-black disabled:text-slate-600 text-slate-200 text-xs font-semibold rounded-xl transition-colors border border-slate-750 cursor-pointer disabled:cursor-not-allowed shadow-sm">
                         <i data-lucide="file-text" class="w-4 h-4 text-indigo-400"></i>
                         <span>TXT</span>
                     </button>
-                    <button onclick="exportAsJson()" id="exportJsonBtn" disabled class="inline-flex items-center justify-center space-x-1.5 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-950 disabled:text-slate-600 text-slate-200 text-xs font-semibold rounded-xl transition-colors border border-slate-750 cursor-pointer disabled:cursor-not-allowed shadow-sm">
+                    <button onclick="exportAsJson()" id="exportJsonBtn" disabled class="inline-flex items-center justify-center space-x-1.5 px-3.5 py-2 bg-zinc-950 hover:bg-slate-800 disabled:bg-black disabled:text-slate-600 text-slate-200 text-xs font-semibold rounded-xl transition-colors border border-slate-750 cursor-pointer disabled:cursor-not-allowed shadow-sm">
                         <i data-lucide="code" class="w-4 h-4 text-emerald-400"></i>
                         <span>JSON</span>
                     </button>
-                    <button onclick="exportAsJsonc()" id="exportJsoncBtn" disabled class="inline-flex items-center justify-center space-x-1.5 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-950 disabled:text-slate-600 text-slate-200 text-xs font-semibold rounded-xl transition-colors border border-slate-750 cursor-pointer disabled:cursor-not-allowed shadow-sm">
+                    <button onclick="exportAsJsonc()" id="exportJsoncBtn" disabled class="inline-flex items-center justify-center space-x-1.5 px-3.5 py-2 bg-zinc-950 hover:bg-slate-800 disabled:bg-black disabled:text-slate-600 text-slate-200 text-xs font-semibold rounded-xl transition-colors border border-slate-750 cursor-pointer disabled:cursor-not-allowed shadow-sm">
                         <i data-lucide="message-square-code" class="w-4 h-4 text-amber-400"></i>
                         <span>JSONC</span>
                     </button>
@@ -277,7 +277,7 @@
                 <div class="flex-1 flex flex-col overflow-hidden border-r border-slate-850">
                     <div id="resultsContainer" class="flex-1 overflow-y-auto p-6 grid grid-cols-1 xl:grid-cols-2 gap-4 auto-rows-max">
                         <div class="col-span-full flex flex-col items-center justify-center py-28 text-slate-600">
-                            <div class="w-16 h-16 rounded-3xl bg-slate-900 border border-slate-800 flex items-center justify-center mb-4 text-slate-600 shadow-inner">
+                            <div class="w-16 h-16 rounded-3xl bg-zinc-950 border border-slate-800 flex items-center justify-center mb-4 text-slate-600 shadow-inner">
                                 <i data-lucide="file-search" class="w-8 h-8"></i>
                             </div>
                             <h3 class="text-sm font-semibold text-slate-300">No Document Results Yet</h3>
@@ -287,8 +287,8 @@
                 </div>
 
                 <!-- Detail / Preview Inspector Panel -->
-                <div id="inspectorPanel" class="w-[480px] bg-slate-900/90 border-l border-slate-800 flex flex-col hidden shadow-2xl">
-                    <div class="px-5 py-3.5 bg-slate-850 border-b border-slate-800 flex items-center justify-between">
+                <div id="inspectorPanel" class="w-[480px] bg-zinc-950/90 border-l border-slate-800 flex flex-col hidden shadow-2xl">
+                    <div class="px-5 py-3.5 bg-zinc-900 border-b border-slate-800 flex items-center justify-between">
                         <h3 class="text-xs font-bold text-slate-200 flex items-center gap-2">
                             <i data-lucide="eye" class="w-4 h-4 text-indigo-400"></i>
                             <span id="inspectorTitle">Document Inspector</span>
@@ -300,15 +300,15 @@
                     
                     <div class="flex-1 overflow-y-auto p-5 space-y-5">
                         <!-- Preview Container -->
-                        <div id="inspectorPreviewContainer" class="bg-slate-950 rounded-2xl border border-slate-800 p-3 flex items-center justify-center h-52 relative overflow-hidden group shadow-inner">
+                        <div id="inspectorPreviewContainer" class="bg-black rounded-2xl border border-slate-800 p-3 flex items-center justify-center h-52 relative overflow-hidden group shadow-inner">
                             <img id="inspectorImage" src="" alt="Preview" class="max-h-full max-w-full object-contain rounded-xl shadow">
-                            <div id="inspectorDocBadge" class="hidden absolute inset-0 flex flex-col items-center justify-center bg-slate-950/95 text-slate-300 p-4 text-center space-y-2">
+                            <div id="inspectorDocBadge" class="hidden absolute inset-0 flex flex-col items-center justify-center bg-black/95 text-slate-300 p-4 text-center space-y-2">
                                 <div class="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shadow-inner">
                                     <i data-lucide="file-text" class="w-6 h-6"></i>
                                 </div>
                                 <span class="text-xs font-bold font-mono tracking-wide text-slate-200" id="inspectorDocTypeLabel">Document File</span>
                             </div>
-                            <div class="absolute bottom-3 right-3 bg-slate-900/90 backdrop-blur-md px-2.5 py-1 rounded-xl text-[10px] text-slate-300 font-mono border border-slate-700 shadow" id="inspectorMetaSize"></div>
+                            <div class="absolute bottom-3 right-3 bg-zinc-950/90 backdrop-blur-md px-2.5 py-1 rounded-xl text-[10px] text-slate-300 font-mono border border-slate-700 shadow" id="inspectorMetaSize"></div>
                         </div>
 
                         <!-- Low-Confidence Review Button Bar -->
@@ -337,7 +337,7 @@
                                     </button>
                                 </div>
                             </div>
-                            <textarea id="inspectorTextarea" oninput="updateInspectorText(this.value)" class="w-full h-60 bg-slate-950 border border-slate-800 rounded-2xl p-3.5 text-xs text-slate-200 font-mono focus:outline-none focus:border-indigo-500 resize-none shadow-inner leading-relaxed"></textarea>
+                            <textarea id="inspectorTextarea" oninput="updateInspectorText(this.value)" class="w-full h-60 bg-black border border-slate-800 rounded-2xl p-3.5 text-xs text-slate-200 font-mono focus:outline-none focus:border-indigo-500 resize-none shadow-inner leading-relaxed"></textarea>
                         </div>
                     </div>
                 </div>
@@ -348,8 +348,8 @@
     </div>
 
     <!-- Low-Confidence Review Wizard Modal (Adobe Acrobat style) -->
-    <div id="lowConfModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center hidden">
-        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-7 shadow-2xl space-y-5 ring-1 ring-white/15 flex flex-col">
+    <div id="lowConfModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center hidden">
+        <div class="bg-zinc-950 border border-slate-800 rounded-3xl max-w-lg w-full p-7 shadow-2xl space-y-5 ring-1 ring-white/15 flex flex-col">
             <div class="flex items-center justify-between border-b border-slate-800 pb-4 shrink-0">
                 <h3 class="text-base font-bold text-white flex items-center gap-2.5">
                     <div class="p-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400">
@@ -363,33 +363,33 @@
             </div>
             
             <div class="space-y-4 text-xs text-slate-300">
-                <div class="flex items-center justify-between bg-slate-950 border border-slate-800 px-4 py-2.5 rounded-2xl">
+                <div class="flex items-center justify-between bg-black border border-slate-800 px-4 py-2.5 rounded-2xl">
                     <span id="lowConfItemName" class="font-semibold text-slate-200 truncate">Document.png</span>
                     <span id="lowConfCounter" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono bg-amber-500/20 text-amber-300">Word 1 of 5</span>
                 </div>
 
                 <!-- Adobe Acrobat-style Visual Context Snippet & Confidence -->
-                <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 flex flex-col items-center justify-center space-y-3 shadow-inner">
+                <div class="bg-black border border-slate-800 rounded-2xl p-4 flex flex-col items-center justify-center space-y-3 shadow-inner">
                     <div class="text-[11px] text-slate-400 uppercase tracking-wider font-semibold flex items-center justify-between w-full px-2">
                         <span>Document Context Crop</span>
                         <span id="lowConfScoreBadge" class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold font-mono bg-red-500/20 text-red-400 border border-red-500/30">48% confidence</span>
                     </div>
                     <!-- Mini Canvas / Image Crop Container -->
-                    <div class="w-full h-24 bg-slate-900 border border-slate-800 rounded-xl overflow-hidden flex items-center justify-center relative shadow-inner">
+                    <div class="w-full h-24 bg-zinc-950 border border-slate-800 rounded-xl overflow-hidden flex items-center justify-center relative shadow-inner">
                         <canvas id="lowConfCropCanvas" class="max-h-full max-w-full object-contain"></canvas>
-                        <div id="lowConfFallbackCropText" class="absolute inset-0 flex items-center justify-center font-mono text-sm font-bold text-amber-300 bg-slate-900/90">
+                        <div id="lowConfFallbackCropText" class="absolute inset-0 flex items-center justify-center font-mono text-sm font-bold text-amber-300 bg-zinc-950/90">
                             uncertain_word
                         </div>
                     </div>
                     <div class="flex items-center space-x-2 w-full pt-1">
                         <span class="text-[10px] text-slate-400">OCR Detected:</span>
-                        <span id="lowConfWordDisplay" class="text-xs font-mono font-bold text-amber-300 bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-700">uncertain_word</span>
+                        <span id="lowConfWordDisplay" class="text-xs font-mono font-bold text-amber-300 bg-zinc-950 px-2.5 py-1 rounded-lg border border-slate-700">uncertain_word</span>
                     </div>
                 </div>
 
                 <div class="space-y-1.5">
                     <label class="font-semibold text-slate-200">Correct / Confirm Word Value:</label>
-                    <input type="text" id="lowConfInput" class="w-full bg-slate-950 border border-slate-750 rounded-xl px-4 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-amber-500 shadow-inner">
+                    <input type="text" id="lowConfInput" class="w-full bg-black border border-slate-750 rounded-xl px-4 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-amber-500 shadow-inner">
                 </div>
             </div>
 
@@ -408,8 +408,8 @@
 
     
     <!-- Queue Stats & Token Estimates Info Modal -->
-    <div id="statsInfoModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center hidden">
-        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4 ring-1 ring-white/15 flex flex-col">
+    <div id="statsInfoModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center hidden">
+        <div class="bg-zinc-950 border border-slate-800 rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4 ring-1 ring-white/15 flex flex-col">
             <div class="flex items-center justify-between border-b border-slate-800 pb-3">
                 <h3 class="text-sm font-bold text-white flex items-center gap-2">
                     <div class="p-1.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
@@ -426,7 +426,7 @@
                     <span class="flex items-center gap-1.5"><i data-lucide="timer" class="w-4 h-4"></i> Est. Remaining:</span>
                     <span id="queueEtaText" class="font-mono">Calculating...</span>
                 </div>
-                <div class="flex items-center justify-between text-slate-300 bg-slate-950 border border-slate-800 px-3 py-2 rounded-xl">
+                <div class="flex items-center justify-between text-slate-300 bg-black border border-slate-800 px-3 py-2 rounded-xl">
                     <span class="flex items-center gap-1.5"><i data-lucide="cpu" class="w-4 h-4 text-violet-400"></i> Est. Tokens:</span>
                     <span id="queueTokenEstimate" class="font-mono text-violet-300">0 tokens</span>
                 </div>
@@ -441,8 +441,8 @@
 
     
     <!-- PBGC PII Detection & Redaction Modal (IM 05-09 & IM 10-03 Compliant) -->
-    <div id="pbgcPiiModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center hidden">
-        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-4xl w-full p-7 shadow-2xl space-y-5 ring-1 ring-white/15 flex flex-col max-h-[90vh]">
+    <div id="pbgcPiiModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center hidden">
+        <div class="bg-zinc-950 border border-slate-800 rounded-3xl max-w-4xl w-full p-7 shadow-2xl space-y-5 ring-1 ring-white/15 flex flex-col max-h-[90vh]">
             <div class="flex items-center justify-between border-b border-slate-800 pb-4 shrink-0">
                 <h3 class="text-base font-bold text-white flex items-center gap-2.5">
                     <div class="p-2 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400">
@@ -456,7 +456,7 @@
             </div>
             
             <div class="flex-1 overflow-y-auto space-y-4 text-xs text-slate-300 pr-1">
-                <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 flex items-center justify-between shadow-inner">
+                <div class="bg-black border border-slate-800 rounded-2xl p-4 flex items-center justify-between shadow-inner">
                     <div>
                         <h4 class="font-bold text-white">Document Corpus PII Scan Summary</h4>
                         <p class="text-slate-400 mt-0.5 text-[11px]">Scans extracted document text for SSN, EIN, bank accounts, DOB, contact data, and credentials under PBGC privacy directives.</p>
@@ -467,28 +467,28 @@
                 </div>
 
                 <div class="grid grid-cols-4 gap-3">
-                    <div class="bg-slate-950 border border-slate-800 p-3.5 rounded-2xl text-center shadow-inner">
+                    <div class="bg-black border border-slate-800 p-3.5 rounded-2xl text-center shadow-inner">
                         <div class="text-[10px] text-slate-400 uppercase font-semibold">Total Findings</div>
                         <div id="piiStatTotal" class="text-lg font-bold text-white font-mono mt-1">0</div>
                     </div>
-                    <div class="bg-slate-950 border border-slate-800 p-3.5 rounded-2xl text-center shadow-inner">
+                    <div class="bg-black border border-slate-800 p-3.5 rounded-2xl text-center shadow-inner">
                         <div class="text-[10px] text-red-400 uppercase font-semibold">Critical / High</div>
                         <div id="piiStatCritical" class="text-lg font-bold text-red-400 font-mono mt-1">0</div>
                     </div>
-                    <div class="bg-slate-950 border border-slate-800 p-3.5 rounded-2xl text-center shadow-inner">
+                    <div class="bg-black border border-slate-800 p-3.5 rounded-2xl text-center shadow-inner">
                         <div class="text-[10px] text-amber-400 uppercase font-semibold">Marked for Redaction</div>
                         <div id="piiStatRedact" class="text-lg font-bold text-amber-400 font-mono mt-1">0</div>
                     </div>
-                    <div class="bg-slate-950 border border-slate-800 p-3.5 rounded-2xl text-center shadow-inner">
+                    <div class="bg-black border border-slate-800 p-3.5 rounded-2xl text-center shadow-inner">
                         <div class="text-[10px] text-emerald-400 uppercase font-semibold">False Positives</div>
                         <div id="piiStatFP" class="text-lg font-bold text-emerald-400 font-mono mt-1">0</div>
                     </div>
                 </div>
 
                 <!-- Findings Table -->
-                <div class="border border-slate-800 rounded-2xl overflow-hidden bg-slate-950 shadow-inner">
+                <div class="border border-slate-800 rounded-2xl overflow-hidden bg-black shadow-inner">
                     <table class="w-full text-left text-xs">
-                        <thead class="bg-slate-900 border-b border-slate-800 text-slate-400 font-semibold uppercase text-[10px]">
+                        <thead class="bg-zinc-950 border-b border-slate-800 text-slate-400 font-semibold uppercase text-[10px]">
                             <tr>
                                 <th class="p-3">File</th>
                                 <th class="p-3">Type</th>
@@ -523,8 +523,8 @@
 
     
     <!-- Password Protected ZIP Export Modal (PBGC Compliance) -->
-    <div id="zipPasswordModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center hidden">
-        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-7 shadow-2xl space-y-5 ring-1 ring-white/15 flex flex-col">
+    <div id="zipPasswordModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center hidden">
+        <div class="bg-zinc-950 border border-slate-800 rounded-3xl max-w-md w-full p-7 shadow-2xl space-y-5 ring-1 ring-white/15 flex flex-col">
             <div class="flex items-center justify-between border-b border-slate-800 pb-4 shrink-0">
                 <h3 class="text-base font-bold text-white flex items-center gap-2.5">
                     <div class="p-2 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
@@ -542,7 +542,7 @@
                 
                 <div class="space-y-1.5">
                     <label class="font-semibold text-slate-200">Archive Encryption Password</label>
-                    <input type="password" id="zipPasswordInput" placeholder="Enter zip password..." class="w-full bg-slate-950 border border-slate-750 rounded-xl px-4 py-3 text-xs text-white font-mono focus:outline-none focus:border-indigo-500 shadow-inner">
+                    <input type="password" id="zipPasswordInput" placeholder="Enter zip password..." class="w-full bg-black border border-slate-750 rounded-xl px-4 py-3 text-xs text-white font-mono focus:outline-none focus:border-indigo-500 shadow-inner">
                 </div>
             </div>
 
@@ -558,8 +558,8 @@
     </div>
 
     <!-- JSONC Preview Modal -->
-    <div id="jsoncPreviewModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center hidden">
-        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-5xl w-full p-7 shadow-2xl space-y-4 ring-1 ring-white/15 flex flex-col h-[92vh]">
+    <div id="jsoncPreviewModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center hidden">
+        <div class="bg-zinc-950 border border-slate-800 rounded-3xl max-w-5xl w-full p-7 shadow-2xl space-y-4 ring-1 ring-white/15 flex flex-col h-[92vh]">
             <div class="flex items-center justify-between border-b border-slate-800 pb-3.5 shrink-0">
                 <h3 class="text-sm font-bold text-white flex items-center gap-2">
                     <i data-lucide="message-square-code" class="w-5 h-5 text-amber-400"></i>
@@ -571,7 +571,7 @@
             </div>
             <div class="flex-1 overflow-hidden flex flex-col space-y-2">
                 <p class="text-xs text-slate-400">Self-describing document package with extracted text and metadata:</p>
-                <textarea id="jsoncPreviewArea" readonly class="w-full flex-1 bg-slate-950 border border-slate-800 rounded-2xl p-4 text-xs text-amber-200 font-mono focus:outline-none resize-none shadow-inner leading-relaxed"></textarea>
+                <textarea id="jsoncPreviewArea" readonly class="w-full flex-1 bg-black border border-slate-800 rounded-2xl p-4 text-xs text-amber-200 font-mono focus:outline-none resize-none shadow-inner leading-relaxed"></textarea>
             </div>
             <div class="pt-3 border-t border-slate-800 flex items-center justify-between shrink-0">
                 <span class="text-[11px] text-slate-400">Ready for downstream LLM ingestion</span>
@@ -590,8 +590,8 @@
     </div>
 
     <!-- Loading / Spinner Modal (triggers after 1s delay) -->
-    <div id="loadingModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center hidden">
-        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-sm w-full p-8 shadow-2xl flex flex-col items-center text-center space-y-4 ring-1 ring-white/10">
+    <div id="loadingModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center hidden">
+        <div class="bg-zinc-950 border border-slate-800 rounded-3xl max-w-sm w-full p-8 shadow-2xl flex flex-col items-center text-center space-y-4 ring-1 ring-white/10">
             <div class="w-14 h-14 rounded-2xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 animate-spin shadow-inner">
                 <i data-lucide="loader-2" class="w-7 h-7"></i>
             </div>
@@ -603,8 +603,8 @@
     </div>
 
     <!-- Guide Modal -->
-    <div id="helpModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center hidden">
-        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-xl w-full p-7 shadow-2xl space-y-5 ring-1 ring-white/10">
+    <div id="helpModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center hidden">
+        <div class="bg-zinc-950 border border-slate-800 rounded-3xl max-w-xl w-full p-7 shadow-2xl space-y-5 ring-1 ring-white/10">
             <div class="flex items-center justify-between border-b border-slate-800 pb-4">
                 <h3 class="text-base font-bold text-white flex items-center gap-2.5">
                     <div class="p-2 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
@@ -618,7 +618,7 @@
             </div>
             <div class="space-y-3.5 text-xs text-slate-300 leading-relaxed">
                 <p class="font-semibold text-slate-200">How to use this app for Downstream LLMs & RAG:</p>
-                <div class="bg-slate-950 border border-slate-800 p-4 rounded-2xl space-y-2">
+                <div class="bg-black border border-slate-800 p-4 rounded-2xl space-y-2">
                     <ul class="list-disc pl-4 space-y-1.5 text-slate-400">
                         <li><strong>Consistent Output Naming:</strong> All ZIP, TXT, JSON, and JSONC exports automatically follow the format `batch-yyyy-mm-dd_hh-mm[am/pm]` based on system time.</li>
                         <li><strong>Low-Confidence Review Wizard:</strong> Automatically isolates words with confidence &lt; 75%, letting you review and correct them word-by-word like Adobe Acrobat.</li>
@@ -636,7 +636,7 @@
     </div>
 
     <!-- Notification Toast -->
-    <div id="toast" class="fixed bottom-6 right-6 bg-slate-900 border border-slate-800 text-slate-200 px-4.5 py-3 rounded-2xl shadow-2xl flex items-center space-x-3 transform translate-y-20 opacity-0 transition-all duration-300 z-50 ring-1 ring-white/10">
+    <div id="toast" class="fixed bottom-6 right-6 bg-zinc-950 border border-slate-800 text-slate-200 px-4.5 py-3 rounded-2xl shadow-2xl flex items-center space-x-3 transform translate-y-20 opacity-0 transition-all duration-300 z-50 ring-1 ring-white/10">
         <i id="toastIcon" data-lucide="check-circle" class="w-5 h-5 text-emerald-400 shrink-0"></i>
         <span id="toastMessage" class="text-xs font-semibold">Notification message</span>
     </div>
@@ -648,11 +648,86 @@
             pdfjsLib.GlobalWorkerOptions.workerSrc = './vendor/pdf.worker.min.js';
         }
 
-        // Initialize Dexie.js IndexedDB database
-        const db = new Dexie('BulkOcrStudioDB');
-        db.version(1).stores({
-            pages: 'id, name, status, size, type'
-        });
+        // Native Pure IndexedDB Wrapper (Zero external dependencies)
+        const DB_NAME = 'BulkOcrStudioNativeDB';
+        const STORE_NAME = 'pages';
+
+        function openNativeDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, 1);
+                request.onupgradeneeded = (event) => {
+                    const db = event.target.result;
+                    if (!db.objectStoreNames.contains(STORE_NAME)) {
+                        db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+                    }
+                };
+                request.onsuccess = (event) => resolve(event.target.result);
+                request.onerror = (event) => reject(event.target.error);
+            });
+        }
+
+        const db = {
+            pages: {
+                async toArray() {
+                    try {
+                        const db = await openNativeDB();
+                        return new Promise((resolve, reject) => {
+                            const tx = db.transaction(STORE_NAME, 'readonly');
+                            const store = tx.objectStore(STORE_NAME);
+                            const req = store.getAll();
+                            req.onsuccess = () => resolve(req.result || []);
+                            req.onerror = () => reject(req.error);
+                        });
+                    } catch(e) { return []; }
+                },
+                async put(item) {
+                    try {
+                        const db = await openNativeDB();
+                        return new Promise((resolve, reject) => {
+                            const tx = db.transaction(STORE_NAME, 'readwrite');
+                            const store = tx.objectStore(STORE_NAME);
+                            const req = store.put(JSON.parse(JSON.stringify(item)));
+                            req.onsuccess = () => resolve(req.result);
+                            req.onerror = () => reject(req.error);
+                        });
+                    } catch(e) {}
+                },
+                async update(id, changes) {
+                    try {
+                        const db = await openNativeDB();
+                        return new Promise((resolve, reject) => {
+                            const tx = db.transaction(STORE_NAME, 'readwrite');
+                            const store = tx.objectStore(STORE_NAME);
+                            const getReq = store.get(id);
+                            getReq.onsuccess = () => {
+                                const data = getReq.result;
+                                if (data) {
+                                    Object.assign(data, changes);
+                                    const putReq = store.put(data);
+                                    putReq.onsuccess = () => resolve(putReq.result);
+                                    putReq.onerror = () => reject(putReq.error);
+                                } else {
+                                    resolve();
+                                }
+                            };
+                            getReq.onerror = () => reject(getReq.error);
+                        });
+                    } catch(e) {}
+                },
+                async clear() {
+                    try {
+                        const db = await openNativeDB();
+                        return new Promise((resolve, reject) => {
+                            const tx = db.transaction(STORE_NAME, 'readwrite');
+                            const store = tx.objectStore(STORE_NAME);
+                            const req = store.clear();
+                            req.onsuccess = () => resolve(req.result);
+                            req.onerror = () => reject(req.error);
+                        });
+                    } catch(e) {}
+                }
+            }
+        };
 
         // Auto-load DB startup
 
@@ -752,13 +827,13 @@
             pbgcPiiFindings.forEach(f => {
                 let sevBadge = f.severity === 'critical' ? '<span class="text-red-400 font-bold">CRITICAL</span>' : (f.severity === 'high' ? '<span class="text-amber-400 font-semibold">HIGH</span>' : '<span class="text-slate-400">MEDIUM</span>');
                 html += `
-                    <tr class="hover:bg-slate-900/50 transition-colors">
+                    <tr class="hover:bg-zinc-950/50 transition-colors">
                         <td class="p-3 text-slate-300 truncate max-w-[140px]">${f.file}</td>
                         <td class="p-3 text-indigo-300 font-semibold">${f.type}</td>
                         <td class="p-3">${sevBadge}</td>
                         <td class="p-3 text-amber-200">${f.masked}</td>
                         <td class="p-3">
-                            <select onchange="updateFindingAction('${f.id}', this.value)" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-[11px] text-slate-200">
+                            <select onchange="updateFindingAction('${f.id}', this.value)" class="bg-zinc-950 border border-slate-700 rounded-lg px-2 py-1 text-[11px] text-slate-200">
                                 <option value="redact" ${f.action === 'redact' ? 'selected' : ''}>Redact</option>
                                 <option value="erase" ${f.action === 'erase' ? 'selected' : ''}>Erase</option>
                                 <option value="retain" ${f.action === 'retain' ? 'selected' : ''}>Retain</option>
@@ -907,19 +982,19 @@
         function handleDragOver(e) {
             e.preventDefault();
             e.stopPropagation();
-            document.getElementById('dropZone').classList.add('border-indigo-500', 'bg-slate-900');
+            document.getElementById('dropZone').classList.add('border-indigo-500', 'bg-zinc-950');
         }
 
         function handleDragLeave(e) {
             e.preventDefault();
             e.stopPropagation();
-            document.getElementById('dropZone').classList.remove('border-indigo-500', 'bg-slate-900');
+            document.getElementById('dropZone').classList.remove('border-indigo-500', 'bg-zinc-950');
         }
 
         async function handleDrop(e) {
             e.preventDefault();
             e.stopPropagation();
-            document.getElementById('dropZone').classList.remove('border-indigo-500', 'bg-slate-900');
+            document.getElementById('dropZone').classList.remove('border-indigo-500', 'bg-zinc-950');
             
             const filesArray = [];
             if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
@@ -1393,7 +1468,7 @@
             if (fileQueue.length === 0) {
                 listEl.innerHTML = `
                     <div class="text-center py-16 text-slate-500">
-                        <div class="w-12 h-12 rounded-2xl bg-slate-850 border border-slate-800 flex items-center justify-center mx-auto mb-3 text-slate-600 shadow-inner">
+                        <div class="w-12 h-12 rounded-2xl bg-zinc-900 border border-slate-800 flex items-center justify-center mx-auto mb-3 text-slate-600 shadow-inner">
                             <i data-lucide="inbox" class="w-6 h-6"></i>
                         </div>
                         <p class="text-xs font-semibold text-slate-400">No items selected</p>
@@ -1413,8 +1488,8 @@
                 else if (item.status === 'error') statusBadge = '<span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold text-red-400 bg-red-500/10 border border-red-500/20">Error</span>';
 
                 html += `
-                    <div onclick="inspectFile('${item.id}')" class="p-3 rounded-2xl hover:bg-slate-850 cursor-pointer transition-all flex items-center space-x-3 group ${activeInspectorId === item.id ? 'bg-slate-850 border border-indigo-500/50 shadow-md' : 'border border-transparent'}">
-                        <div class="w-10 h-10 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center shrink-0 overflow-hidden shadow-inner">
+                    <div onclick="inspectFile('${item.id}')" class="p-3 rounded-2xl hover:bg-zinc-900 cursor-pointer transition-all flex items-center space-x-3 group ${activeInspectorId === item.id ? 'bg-zinc-900 border border-indigo-500/50 shadow-md' : 'border border-transparent'}">
+                        <div class="w-10 h-10 rounded-xl bg-black border border-slate-800 flex items-center justify-center shrink-0 overflow-hidden shadow-inner">
                             <img src="${item.previewUrl}" class="w-full h-full object-cover">
                         </div>
                         <div class="flex-1 min-w-0">
@@ -1732,7 +1807,7 @@
             if (fileQueue.length === 0) {
                 container.innerHTML = bannerOuterHtml + `
                     <div class="col-span-full flex flex-col items-center justify-center py-28 text-slate-600">
-                        <div class="w-16 h-16 rounded-3xl bg-slate-900 border border-slate-800 flex items-center justify-center mb-4 text-slate-600 shadow-inner">
+                        <div class="w-16 h-16 rounded-3xl bg-zinc-950 border border-slate-800 flex items-center justify-center mb-4 text-slate-600 shadow-inner">
                             <i data-lucide="file-search" class="w-8 h-8"></i>
                         </div>
                         <h3 class="text-sm font-semibold text-slate-300">No Document Results Yet</h3>
@@ -1746,7 +1821,7 @@
             if (filteredQueue.length === 0) {
                 container.innerHTML = bannerOuterHtml + `
                     <div class="col-span-full flex flex-col items-center justify-center py-28 text-slate-600">
-                        <div class="w-16 h-16 rounded-3xl bg-slate-900 border border-slate-800 flex items-center justify-center mb-4 text-slate-600 shadow-inner">
+                        <div class="w-16 h-16 rounded-3xl bg-zinc-950 border border-slate-800 flex items-center justify-center mb-4 text-slate-600 shadow-inner">
                             <i data-lucide="search-x" class="w-8 h-8"></i>
                         </div>
                         <h3 class="text-sm font-semibold text-slate-300">${searchError ? 'Invalid Regular Expression syntax' : 'No matching items found'}</h3>
@@ -1769,10 +1844,10 @@
                 const lowConfCount = item.lowConfidenceWords ? item.lowConfidenceWords.length : 0;
 
                 html += `
-                    <div onclick="inspectFile('${item.id}')" class="bg-slate-900 border ${activeInspectorId === item.id ? 'border-indigo-500 shadow-xl shadow-indigo-500/10 ring-1 ring-indigo-500/30' : 'border-slate-800 hover:border-slate-700'} rounded-3xl p-5 flex flex-col transition-all cursor-pointer group shadow-md">
+                    <div onclick="inspectFile('${item.id}')" class="bg-zinc-950 border ${activeInspectorId === item.id ? 'border-indigo-500 shadow-xl shadow-indigo-500/10 ring-1 ring-indigo-500/30' : 'border-slate-800 hover:border-slate-700'} rounded-3xl p-5 flex flex-col transition-all cursor-pointer group shadow-md">
                         <div class="flex items-center justify-between mb-3.5">
                             <div class="flex items-center space-x-3 min-w-0">
-                                <div class="w-10 h-10 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-center shrink-0 overflow-hidden shadow-inner">
+                                <div class="w-10 h-10 rounded-2xl bg-black border border-slate-800 flex items-center justify-center shrink-0 overflow-hidden shadow-inner">
                                     <img src="${item.previewUrl}" class="w-full h-full object-cover">
                                 </div>
                                 <div class="min-w-0">
@@ -1785,7 +1860,7 @@
                                 ${statusBadge}
                             </div>
                         </div>
-                        <div class="flex-1 bg-slate-950 border border-slate-850 rounded-2xl p-3.5 font-mono text-xs text-slate-300 h-36 overflow-y-auto select-text whitespace-pre-wrap shadow-inner leading-relaxed">${displayText}</div>
+                        <div class="flex-1 bg-black border border-slate-850 rounded-2xl p-3.5 font-mono text-xs text-slate-300 h-36 overflow-y-auto select-text whitespace-pre-wrap shadow-inner leading-relaxed">${displayText}</div>
                         <div class="mt-4 flex items-center justify-between pt-3 border-t border-slate-800/80 text-[11px] text-slate-400">
                             <span class="font-medium">${item.text ? item.text.split(/\s+/).filter(Boolean).length + ' words' : '0 words'}</span>
                             <span class="text-indigo-400 font-semibold group-hover:translate-x-0.5 transition-transform flex items-center gap-1">Inspect Item <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i></span>
@@ -1843,7 +1918,7 @@
             }
 
             let svgIcon = '';
-            let containerBg = 'bg-slate-900 border-slate-700';
+            let containerBg = 'bg-zinc-950 border-slate-700';
 
             if (ext === 'pdf') {
                 containerBg = 'bg-red-500/15 border-red-500/40 shadow-red-500/20';
