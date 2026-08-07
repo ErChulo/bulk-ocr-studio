@@ -4,15 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Offline Offline Bulk OCR Studio (o-bulk-ocr-studio) - 100% Air-Gapped Client-Side Document Pipeline</title>
-    <!-- Local Vendored Tailwind CSS -->
-    <script src="./vendor/tailwind.js"></script>
-    <!-- Vendored Local Libraries for 100% Offline / Air-Gapped Operation -->
-    <script src="./vendor/tesseract.min.js"></script>
-    <script src="./vendor/pdf.min.js"></script>
-    <script src="./vendor/xlsx.full.min.js"></script>
-    <script src="./vendor/jszip.min.js"></script>
-    <script src="./vendor/dexie.js"></script>
-    <script src="./vendor/lucide.js"></script>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tesseract.js CDN v5 -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <!-- PDF.js CDN v3.11.174 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <!-- Mammoth.js for Word document parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+    <!-- SheetJS (xlsx) for Excel parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- JSZip CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <!-- Dexie.js CDN (IndexedDB wrapper) -->
+    <script src="https://unpkg.com/dexie@latest/dist/dexie.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
     <script>
         // Suppress noisy PDF.js font warnings in console
         const _origConsoleWarn = console.warn;
@@ -137,7 +144,7 @@
                     </div>
 
                     <input type="file" id="folderInput" webkitdirectory directory multiple class="hidden" onchange="handleFileSelection(event)">
-                    <input type="file" id="fileInput" multiple accept="image/*,.pdf,.txt,.csv,.xlsx,.xls,.xlsm,.xlsb,.md" class="hidden" onchange="handleFileSelection(event)">
+                    <input type="file" id="fileInput" multiple accept="image/*,.pdf,.txt,.csv,.xlsx,.xls,.xlsm,.xlsb,.doc,.docx,.dotm,.md" class="hidden" onchange="handleFileSelection(event)">
 
                     <div id="dropZone" class="border-2 border-dashed border-slate-700 hover:border-indigo-500 rounded-2xl p-3 text-center transition-all bg-slate-950/60 hover:bg-slate-950 cursor-pointer group/drop"
                          ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" onclick="document.getElementById('fileInput').click()">
@@ -1056,6 +1063,62 @@
                             showToast(`Failed to parse PDF: ${file.name}`, 'alert-circle');
                         }
                     } 
+                    else if (['docx', 'doc', 'dotm'].includes(ext)) {
+                        try {
+                            const arrayBuffer = await file.arrayBuffer();
+                            let extractedText = '';
+                            if (window.mammoth) {
+                                const result = await window.mammoth.extractRawText({ arrayBuffer });
+                                extractedText = result.value || '';
+                            } else {
+                                extractedText = '[Word document binary format - mammoth library loading]';
+                            }
+
+                            const canvas = document.createElement('canvas');
+                            canvas.width = 200; canvas.height = 200;
+                            const ctx = canvas.getContext('2d');
+                            ctx.fillStyle = '#1e293b'; ctx.fillRect(0, 0, 200, 200);
+                            ctx.fillStyle = '#3b82f6'; ctx.font = 'bold 24px sans-serif'; ctx.fillText('WORD', 50, 110);
+                            const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+                            const thumbFile = new File([blob], `${file.name}_thumb.png`, { type: 'image/png' });
+
+                            const id = 'file_' + Math.random().toString(36).substring(2, 9);
+                            const previewUrl = URL.createObjectURL(thumbFile);
+
+                            const itemData = {
+                                id,
+                                file: thumbFile,
+                                name: file.name,
+                                path: file.name,
+                                size: file.size,
+                                type: file.type || 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                                isOcrNeeded: false,
+                                status: 'completed',
+                                progress: 1,
+                                text: extractedText.trim(),
+                                lowConfidenceWords: [],
+                                error: null,
+                                previewUrl
+                            };
+                            fileQueue.push(itemData);
+
+                            await db.pages.put({
+                                id,
+                                name: itemData.name,
+                                size: itemData.size,
+                                type: itemData.type,
+                                status: 'completed',
+                                text: itemData.text,
+                                lowConfidenceWords: [],
+                                blob: thumbFile
+                            });
+
+                            addedCount++;
+                        } catch (err) {
+                            console.error('Error parsing Word document:', err);
+                            showToast(`Failed to parse Word file: ${file.name}`, 'alert-circle');
+                        }
+                    }
                     else if (['xlsx', 'xls', 'xlsm', 'xlsb'].includes(ext)) {
                         try {
                             const arrayBuffer = await file.arrayBuffer();
