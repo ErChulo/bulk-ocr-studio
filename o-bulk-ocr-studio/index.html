@@ -4,22 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Offline Offline Bulk OCR Studio (o-bulk-ocr-studio) - 100% Air-Gapped Client-Side Document Pipeline</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Tesseract.js CDN v5 -->
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-    <!-- PDF.js CDN v3.11.174 -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <!-- Mammoth.js for Word document parsing -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
-    <!-- SheetJS (xlsx) for Excel parsing -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <!-- JSZip CDN -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <!-- Dexie.js CDN (IndexedDB wrapper) -->
-    <script src="https://unpkg.com/dexie@latest/dist/dexie.js"></script>
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Local Vendored Tailwind CSS -->
+    <script src="./vendor/tailwind.js"></script>
+    <!-- Vendored Local Libraries for 100% Offline / Air-Gapped Operation -->
+    <script src="./vendor/tesseract.min.js"></script>
+    <script src="./vendor/pdf.min.js"></script>
+    <script src="./vendor/mammoth.browser.min.js"></script>
+    <script src="./vendor/xlsx.full.min.js"></script>
+    <script src="./vendor/jszip.min.js"></script>
+    <script src="./vendor/dexie.js"></script>
+    <script src="./vendor/lucide.js"></script>
     <script>
         // Suppress noisy PDF.js font warnings in console
         const _origConsoleWarn = console.warn;
