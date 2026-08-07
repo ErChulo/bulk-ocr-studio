@@ -1772,7 +1772,19 @@
             const ext = item.name.split('.').pop().toLowerCase();
             const iconContainer = document.getElementById('inspectorVsCodeIcon');
             const typeLabel = document.getElementById('inspectorDocTypeLabel');
+            const docBadge = document.getElementById('inspectorDocBadge');
+            const imgEl = document.getElementById('inspectorImage');
+            
             typeLabel.textContent = `${ext.toUpperCase()} File`;
+
+            // If it's a non-image file (xlsx, xls, csv, txt, md) or has thumbnail placeholder, show docBadge
+            if (['xlsx', 'xls', 'csv', 'txt', 'md'].includes(ext) || (item.type && !item.type.startsWith('image/'))) {
+                docBadge.classList.remove('hidden');
+                imgEl.classList.add('hidden');
+            } else {
+                docBadge.classList.add('hidden');
+                imgEl.classList.remove('hidden');
+            }
 
             let iconBg = 'bg-slate-800 text-slate-300';
             let iconHtml = '<i data-lucide="file" class="w-7 h-7"></i>';
