@@ -824,14 +824,14 @@
 
         // Use string patterns compiled safely at runtime to prevent any escape sequence corruption
         const pbgcPatterns = [
-            { type: "SSN", pattern: "(?!000|666|9\\d{2})\\d{3}[- ]?\\d{2}[- ]?\\d{4}", flags: "g", severity: "critical", confidence: 0.95, policy: "Direct identifier under PBGC IM 05-09 & IM 10-03" },
-            { type: "EIN_OR_ROUTING", pattern: "\\d{2}-\\d{7}|\\\d{9}", flags: "g", severity: "high", confidence: 0.7, policy: "Financial or organizational identifier" },
-            { type: "BANK_ACCOUNT", pattern: "(?:account|acct|bank account)[:\\s#-]*\\d{6,17}", flags: "gi", severity: "critical", confidence: 0.88, policy: "Bank or payment data requiring strong safeguards" },
-            { type: "EMAIL", pattern: "[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}", flags: "g", severity: "medium", confidence: 0.9, policy: "Linkable identifier under PBGC privacy policy" },
-            { type: "PHONE", pattern: "(?:\\+?1[-.\s]*)?\\(?[2-9]\\d{2}\\)?[-.\s]*\\d{3}[-.\s]*\\d{4}", flags: "g", severity: "medium", confidence: 0.85, policy: "Linkable contact identifier" },
-            { type: "CREDIT_CARD", pattern: "(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|3[47][0-9]{13})", flags: "g", severity: "critical", confidence: 0.9, policy: "Financial account data" },
-            { type: "DOB", pattern: "(?:DOB|date of birth|birth date)[:\\s-]*(?:0?[1-9]|1[0-2])[/-](?:0?[1-9]|[12]\\d|3[01])[/-](?:19|20)\\d{2}", flags: "gi", severity: "high", confidence: 0.8, policy: "Directly linkable personal attribute" },
-            { type: "AWS_KEY", pattern: "AKIA[0-9A-Z]{16}", flags: "g", severity: "critical", confidence: 0.98, policy: "Credential or technical secret" }
+            { type: "SSN", pattern: "(?<!\\d)(?!000|666|9\\d{2})\\d{3}[- ]?\\d{2}[- ]?\\d{4}(?!\\d)", flags: "g", severity: "critical", confidence: 0.95, policy: "Direct identifier under PBGC IM 05-09 & IM 10-03" },
+            { type: "EIN_OR_ROUTING", pattern: "(?<!\\d)(?:\\d{2}-\\d{7}|\\d{9})(?!\\d)", flags: "g", severity: "high", confidence: 0.7, policy: "Financial or organizational identifier" },
+            { type: "BANK_ACCOUNT", pattern: "\\b(?:account|acct|bank account)[:\\s#-]*\\d{6,17}(?!\\d)", flags: "gi", severity: "critical", confidence: 0.88, policy: "Bank or payment data requiring strong safeguards" },
+            { type: "EMAIL", pattern: "\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}\\b", flags: "g", severity: "medium", confidence: 0.9, policy: "Linkable identifier under PBGC privacy policy" },
+            { type: "PHONE", pattern: "(?<!\\d)(?:\\+?1[-.\\s]*)?\\(?[2-9]\\d{2}\\)?[-.\\s]*\\d{3}[-.\\s]*\\d{4}(?!\\d)", flags: "g", severity: "medium", confidence: 0.85, policy: "Linkable contact identifier" },
+            { type: "CREDIT_CARD", pattern: "(?<!\\d)(?:4[0-9]{12}(?:[0-9]{3})?|4[0-9]{3}[- ]?[0-9]{4}[- ]?[0-9]{4}[- ]?[0-9]{4}|5[1-5][0-9]{14}|5[1-5][0-9]{2}[- ]?[0-9]{4}[- ]?[0-9]{4}[- ]?[0-9]{4}|3[47][0-9]{13})(?!\\d)", flags: "g", severity: "critical", confidence: 0.9, policy: "Financial account data" },
+            { type: "DOB", pattern: "\\b(?:DOB|date of birth|birth date)[:\\s-]*(?:0?[1-9]|1[0-2])[/-](?:0?[1-9]|[12]\\d|3[01])[/-](?:19|20)\\d{2}(?!\\d)", flags: "gi", severity: "high", confidence: 0.8, policy: "Directly linkable personal attribute" },
+            { type: "AWS_KEY", pattern: "\\bAKIA[0-9A-Z]{16}\\b", flags: "g", severity: "critical", confidence: 0.98, policy: "Credential or technical secret" }
         ];
 
         function runPbgcPiiScan() {
@@ -840,7 +840,7 @@
                 if (!item.text) return;
                 pbgcPatterns.forEach(det => {
                     try {
-                        const rx = new RegExp('\\b' + det.pattern + '\\b', det.flags);
+                        const rx = new RegExp(det.pattern, det.flags);
                         let match;
                         const seenVals = new Set();
                         while ((match = rx.exec(item.text)) !== null) {
