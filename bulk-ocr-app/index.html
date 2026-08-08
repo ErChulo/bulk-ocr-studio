@@ -650,7 +650,7 @@
     <!-- Application Script Logic -->
     <script>
         // Delayed Spinner Management
-        // spinnerTimeout declared at top
+        let spinnerTimeout = null;
         function showLoadingSpinner(title = 'Processing...', subtitle = 'Please wait while we parse documents and prepare items.') {
             if (spinnerTimeout) clearTimeout(spinnerTimeout);
             spinnerTimeout = setTimeout(() => {
@@ -761,6 +761,18 @@
                             req.onerror = () => reject(req.error);
                         });
                     } catch(e) {}
+                },
+                async count() {
+                    try {
+                        const db = await openNativeDB();
+                        return new Promise((resolve, reject) => {
+                            const tx = db.transaction(STORE_NAME, 'readonly');
+                            const store = tx.objectStore(STORE_NAME);
+                            const req = store.count();
+                            req.onsuccess = () => resolve(req.result || 0);
+                            req.onerror = () => reject(req.error);
+                        });
+                    } catch(e) { return 0; }
                 }
             }
         };
