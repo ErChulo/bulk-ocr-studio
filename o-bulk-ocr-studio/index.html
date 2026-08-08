@@ -716,7 +716,7 @@
                         return new Promise((resolve, reject) => {
                             const tx = db.transaction(STORE_NAME, 'readwrite');
                             const store = tx.objectStore(STORE_NAME);
-                            const req = store.put(JSON.parse(JSON.stringify(item)));
+                            const req = store.put(item);
                             req.onsuccess = () => resolve(req.result);
                             req.onerror = () => reject(req.error);
                         });
@@ -778,21 +778,23 @@
             try {
                 const savedPages = await db.pages.toArray();
                 if (savedPages && savedPages.length > 0) {
-                    fileQueue = savedPages.map(p => ({
-                        id: p.id,
-                        file: p.blob || new File([''], p.name, { type: p.type || 'text/plain' }),
-                        name: p.name,
-                        path: p.name,
-                        size: p.size,
-                        type: p.type,
-                        isOcrNeeded: p.status !== 'completed',
-                        status: p.status || 'completed',
-                        progress: p.status === 'completed' ? 1 : 0,
-                        text: p.text || '',
-                        lowConfidenceWords: p.lowConfidenceWords || [],
-                        error: null,
-                        previewUrl: p.blob ? URL.createObjectURL(p.blob) : ''
-                    }));
+                    fileQueue = savedPages.map(p => {
+                        const blob = (p.blob && p.blob instanceof Blob) ? p.blob : null;
+                        return {
+                            id: p.id,
+                            file: blob || new File([''], p.name, { type: p.type || 'text/plain' }),
+                            name: p.name,
+                            path: p.name,
+                            size: p.size,
+                            type: p.type,
+                            isOcrNeeded: p.status !== 'completed',
+                            status: p.status || 'completed',
+                            progress: p.status === 'completed' ? 1 : 0,
+                            text: p.text || '',
+                            lowConfidenceWords: p.lowConfidenceWords || [],
+                            error: null,
+                            previewUrl: blob ? URL.createObjectURL(blob) : ''
+                        }});
                     updateQueueUI();
                     renderResultsGrid();
                     updateDbCountBadge();
@@ -1411,10 +1413,11 @@
                 }
 
                 fileQueue = savedPages.map(p => {
-                    const previewUrl = URL.createObjectURL(p.blob);
+                    const blob = (p.blob && p.blob instanceof Blob) ? p.blob : null;
+                    const previewUrl = blob ? URL.createObjectURL(blob) : '';
                     return {
                         id: p.id,
-                        file: p.blob,
+                        file: blob || new File([''], p.name, { type: p.type || 'text/plain' }),
                         name: p.name,
                         path: p.name,
                         size: p.size,
@@ -1425,10 +1428,8 @@
                         text: p.text || '',
                         lowConfidenceWords: p.lowConfidenceWords || [],
                         error: null,
-                        previewUrl
-                    };
-                });
-
+previewUrl
+                    }});
                 updateQueueUI();
                 renderResultsGrid();
                 updateExportButtonsState();
@@ -1986,9 +1987,6 @@
                 containerBg = 'bg-amber-500/15 border-amber-500/40 shadow-amber-500/20';
                 svgIcon = `<svg class="w-10 h-10 text-amber-400 drop-shadow-md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`;
             }
-
-            iconContainer.className = `w-16 h-16 rounded-2xl flex items-center justify-center shadow-xl border ${containerBg} transition-all`;
-            iconContainer.innerHTML = svgIcon;
 
             const reviewTrigger = document.getElementById('inspectorReviewTrigger');
             const reviewBtnText = document.getElementById('inspectorReviewBtnText');
