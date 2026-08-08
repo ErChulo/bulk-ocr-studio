@@ -808,39 +808,47 @@
             runPbgcPiiScan();
         }
 
-        const pbgcDetectors = [
-            { type: "SSN", regex: new RegExp('\\b(?!000|666|9\d{2})\d{3}[- ]?\d{2}[- ]?\d{4}\b', 'g'), severity: "critical", confidence: 0.95, policy: "Direct identifier under PBGC IM 05-09 & IM 10-03" },
-            { type: "EIN_OR_ROUTING", regex: new RegExp('\\b\d{2}-\d{7}\b|\b\d{9}\b', 'g'), severity: "high", confidence: 0.7, policy: "Financial or organizational identifier" },
-            { type: "BANK_ACCOUNT", regex: new RegExp('\\b(?:account|acct|bank account)[:\s#-]*\d{6,17}\b', 'gi'), severity: "critical", confidence: 0.88, policy: "Bank or payment data requiring strong safeguards" },
-            { type: "EMAIL", regex: new RegExp('\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b', 'g'), severity: "medium", confidence: 0.9, policy: "Linkable identifier under PBGC privacy policy" },
-            { type: "PHONE", regex: new RegExp('\\b(?:\+?1[-.\s]*)?\(?[2-9]\d{2}\)?[-.\s]*\d{3}[-.\s]*\d{4}\b', 'g'), severity: "medium", confidence: 0.85, policy: "Linkable contact identifier" },
-            { type: "CREDIT_CARD", regex: new RegExp('\\b(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|3[47][0-9]{13})\b', 'g'), severity: "critical", confidence: 0.9, policy: "Financial account data" },
-            { type: "DOB", regex: new RegExp('\\b(?:DOB|date of birth|birth date)[:\s-]*(?:0?[1-9]|1[0-2])[/-](?:0?[1-9]|[12]\d|3[01])[/-](?:19|20)\d{2}\b', 'gi'), severity: "high", confidence: 0.8, policy: "Directly linkable personal attribute" },
-            { type: "AWS_KEY", regex: new RegExp('\\bAKIA[0-9A-Z]{16}\b', 'g'), severity: "critical", confidence: 0.98, policy: "Credential or technical secret" }
+        // Use string patterns compiled safely at runtime to prevent any escape sequence corruption
+        const pbgcPatterns = [
+            { type: "SSN", pattern: "(?!000|666|9\\d{2})\\d{3}[- ]?\\d{2}[- ]?\\d{4}", flags: "g", severity: "critical", confidence: 0.95, policy: "Direct identifier under PBGC IM 05-09 & IM 10-03" },
+            { type: "EIN_OR_ROUTING", pattern: "\\d{2}-\\d{7}|\\\d{9}", flags: "g", severity: "high", confidence: 0.7, policy: "Financial or organizational identifier" },
+            { type: "BANK_ACCOUNT", pattern: "(?:account|acct|bank account)[:\\s#-]*\\d{6,17}", flags: "gi", severity: "critical", confidence: 0.88, policy: "Bank or payment data requiring strong safeguards" },
+            { type: "EMAIL", pattern: "[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}", flags: "g", severity: "medium", confidence: 0.9, policy: "Linkable identifier under PBGC privacy policy" },
+            { type: "PHONE", pattern: "(?:\\+?1[-.\s]*)?\\(?[2-9]\\d{2}\\)?[-.\s]*\\d{3}[-.\s]*\\d{4}", flags: "g", severity: "medium", confidence: 0.85, policy: "Linkable contact identifier" },
+            { type: "CREDIT_CARD", pattern: "(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|3[47][0-9]{13})", flags: "g", severity: "critical", confidence: 0.9, policy: "Financial account data" },
+            { type: "DOB", pattern: "(?:DOB|date of birth|birth date)[:\\s-]*(?:0?[1-9]|1[0-2])[/-](?:0?[1-9]|[12]\\d|3[01])[/-](?:19|20)\\d{2}", flags: "gi", severity: "high", confidence: 0.8, policy: "Directly linkable personal attribute" },
+            { type: "AWS_KEY", pattern: "AKIA[0-9A-Z]{16}", flags: "g", severity: "critical", confidence: 0.98, policy: "Credential or technical secret" }
         ];
 
         function runPbgcPiiScan() {
             pbgcPiiFindings = [];
             fileQueue.forEach(item => {
                 if (!item.text) return;
-                pbgcDetectors.forEach(det => {
-                    const rx = new RegExp('\\b' + det.pattern + '\\b', det.flags);
-                    let match;
-                    while ((match = rx.exec(item.text)) !== null) {
-                        const val = match[0];
-                        const masked = val.length <= 4 ? "****" : "*".repeat(val.length - 4) + val.slice(-4);
-                        pbgcPiiFindings.push({
-                            id: 'pii_' + Math.random().toString(36).substring(2, 9),
-                            fileId: item.id,
-                            file: item.name,
-                            type: det.type,
-                            match: val,
-                            masked,
-                            severity: det.severity,
-                            confidence: det.confidence,
-                            policy: det.policy,
-                            action: det.severity === 'critical' || det.severity === 'high' ? 'redact' : 'unresolved'
-                        });
+                pbgcPatterns.forEach(det => {
+                    try {
+                        const rx = new RegExp('\\b' + det.pattern + '\\b', det.flags);
+                        let match;
+                        const seenVals = new Set();
+                        while ((match = rx.exec(item.text)) !== null) {
+                            const val = match[0];
+                            if (!val || seenVals.has(val)) continue;
+                            seenVals.add(val);
+                            const masked = val.length <= 4 ? "****" : "*".repeat(val.length - 4) + val.slice(-4);
+                            pbgcPiiFindings.push({
+                                id: 'pii_' + Math.random().toString(36).substring(2, 9),
+                                fileId: item.id,
+                                file: item.name,
+                                type: det.type,
+                                match: val,
+                                masked,
+                                severity: det.severity,
+                                confidence: det.confidence,
+                                policy: det.policy,
+                                action: det.severity === 'critical' || det.severity === 'high' ? 'redact' : 'unresolved'
+                            });
+                        }
+                    } catch (e) {
+                        console.error('PII Detector error for ' + det.type + ':', e);
                     }
                 });
             });
@@ -863,13 +871,13 @@
             pbgcPiiFindings.forEach(f => {
                 let sevBadge = f.severity === 'critical' ? '<span class="text-red-400 font-bold">CRITICAL</span>' : (f.severity === 'high' ? '<span class="text-amber-400 font-semibold">HIGH</span>' : '<span class="text-slate-400">MEDIUM</span>');
                 html += `
-                    <tr class="hover:bg-zinc-950/50 transition-colors">
+                    <tr class="hover:bg-slate-900/50 transition-colors">
                         <td class="p-3 text-slate-300 truncate max-w-[140px]">${f.file}</td>
                         <td class="p-3 text-indigo-300 font-semibold">${f.type}</td>
                         <td class="p-3">${sevBadge}</td>
                         <td class="p-3 text-amber-200">${f.masked}</td>
                         <td class="p-3">
-                            <select onchange="updateFindingAction('${f.id}', this.value)" class="bg-zinc-950 border border-slate-700 rounded-lg px-2 py-1 text-[11px] text-slate-200">
+                            <select onchange="updateFindingAction('${f.id}', this.value)" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-[11px] text-slate-200">
                                 <option value="redact" ${f.action === 'redact' ? 'selected' : ''}>Redact</option>
                                 <option value="erase" ${f.action === 'erase' ? 'selected' : ''}>Erase</option>
                                 <option value="retain" ${f.action === 'retain' ? 'selected' : ''}>Retain</option>
