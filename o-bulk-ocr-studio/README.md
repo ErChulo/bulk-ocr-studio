@@ -1,9 +1,9 @@
 # Offline Bulk OCR Studio (`o-bulk-ocr-studio`)
 
-![Version](https://img.shields.io/badge/version-v1.7.0--offline-blue.svg)
+![Version](https://img.shields.io/badge/version-v1.10.0--offline-blue.svg)
 ![Air-Gapped](https://img.shields.io/badge/air--gapped-100%25-success.svg)
-![IndexedDB](https://img.shields.io/badge/storage-IndexedDB%20(Dexie.js)-orange.svg)
-![License](https://img.shields.io/badge/license-MIT-green.svg)
+![IndexedDB](https://img.shields.io/badge/storage-IndexedDB-orange.svg)
+![License](https://img.shields.io/github/license/ErChulo/bulk-ocr-studio)
 
 **Offline Bulk OCR Studio** (`o-bulk-ocr-studio`) is a 100% air-gapped, zero-internet-required variant of Bulk OCR Studio. It is specifically built for restricted enterprise and office environments where Python installations, network calls, and external server connections are strictly forbidden.
 
