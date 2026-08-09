@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bulk OCR Studio - Client-Side Batch OCR & Document Pipeline Studio</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%84%3C/text%3E%3C/svg%3E">
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Tesseract.js CDN v5 -->
@@ -577,7 +578,13 @@
 
             <div class="pt-3 border-t border-slate-800 flex items-center justify-between shrink-0 flex-wrap gap-2">
                 <span class="text-[10px] text-slate-500 font-sans">Local-only processing — no data leaves this device. Redaction applies to stored text (IM 15-03 disposal-friendly).</span>
-                <div class="flex items-center space-x-2.5">
+                <div class="flex items-center space-x-2.5 flex-wrap justify-end">
+                    <button onclick="exportPiiComplianceReportJson()" class="px-3 py-2 bg-slate-800 hover:bg-slate-750 text-slate-200 font-semibold text-[11px] rounded-xl transition-all cursor-pointer border border-slate-700">
+                        PII Report JSON
+                    </button>
+                    <button onclick="exportPiiComplianceReportCsv()" class="px-3 py-2 bg-slate-800 hover:bg-slate-750 text-slate-200 font-semibold text-[11px] rounded-xl transition-all cursor-pointer border border-slate-700">
+                        PII Report CSV
+                    </button>
                     <button id="piiApplyRedactionsBtn" onclick="applyRedactionsToQueue()" class="px-4 py-2.5 bg-red-600 hover:bg-red-500 disabled:bg-slate-800 disabled:text-slate-500 text-white font-semibold text-xs rounded-xl transition-all shadow-md cursor-pointer disabled:cursor-not-allowed">
                         Apply Redactions to Corpus
                     </button>
@@ -774,14 +781,18 @@
         // Native Pure IndexedDB Wrapper (Zero external dependencies)
         const DB_NAME = 'BulkOcrStudioNativeDB';
         const STORE_NAME = 'pages';
+        const META_STORE = 'meta';
 
         function openNativeDB() {
             return new Promise((resolve, reject) => {
-                const request = indexedDB.open(DB_NAME, 1);
+                const request = indexedDB.open(DB_NAME, 2);
                 request.onupgradeneeded = (event) => {
                     const db = event.target.result;
                     if (!db.objectStoreNames.contains(STORE_NAME)) {
                         db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+                    }
+                    if (!db.objectStoreNames.contains(META_STORE)) {
+                        db.createObjectStore(META_STORE);
                     }
                 };
                 request.onsuccess = (event) => resolve(event.target.result);
@@ -861,6 +872,44 @@
                         });
                     } catch(e) { return 0; }
                 }
+            },
+            meta: {
+                async get(key) {
+                    try {
+                        const db = await openNativeDB();
+                        return new Promise((resolve, reject) => {
+                            const tx = db.transaction(META_STORE, 'readonly');
+                            const store = tx.objectStore(META_STORE);
+                            const req = store.get(key);
+                            req.onsuccess = () => resolve(req.result);
+                            req.onerror = () => reject(req.error);
+                        });
+                    } catch(e) { return undefined; }
+                },
+                async put(key, value) {
+                    try {
+                        const db = await openNativeDB();
+                        return new Promise((resolve, reject) => {
+                            const tx = db.transaction(META_STORE, 'readwrite');
+                            const store = tx.objectStore(META_STORE);
+                            const req = store.put(value, key);
+                            req.onsuccess = () => resolve(req.result);
+                            req.onerror = () => reject(req.error);
+                        });
+                    } catch(e) {}
+                },
+                async clear() {
+                    try {
+                        const db = await openNativeDB();
+                        return new Promise((resolve, reject) => {
+                            const tx = db.transaction(META_STORE, 'readwrite');
+                            const store = tx.objectStore(META_STORE);
+                            const req = store.clear();
+                            req.onsuccess = () => resolve(req.result);
+                            req.onerror = () => reject(req.error);
+                        });
+                    } catch(e) {}
+                }
             }
         };
 
@@ -930,6 +979,44 @@
         function piiSet(id, value) {
             const el = document.getElementById(id);
             if (el) el.textContent = value;
+        }
+
+        function buildPersistedPiiReviewMap() {
+            const map = {};
+            pbgcPiiFindings.forEach(f => {
+                if (f.status === 'resolved') {
+                    map[f.id] = {
+                        action: f.action,
+                        status: f.status,
+                        resolvedAt: f.resolvedAt || Date.now()
+                    };
+                }
+            });
+            return map;
+        }
+
+        async function loadPersistedPiiReviewMap() {
+            try {
+                return (await db.meta.get('piiReviewMap')) || {};
+            } catch (e) {
+                return {};
+            }
+        }
+
+        async function persistPiiReviewMap() {
+            try {
+                await db.meta.put('piiReviewMap', buildPersistedPiiReviewMap());
+            } catch (e) {
+                console.error('Failed to persist PII review map:', e);
+            }
+        }
+
+        async function clearPersistedPiiReviewMap() {
+            try {
+                await db.meta.put('piiReviewMap', {});
+            } catch (e) {
+                console.error('Failed to clear PII review map:', e);
+            }
         }
 
         function openPbgcPiiModal() {
@@ -1041,15 +1128,18 @@
                 const scanId = ++piiScanId;
                 const fresh = computePiiCorpus(diag, scanId);
                 const priorById = new Map(pbgcPiiFindings.map(f => [f.id, f]));
+                const persistedById = await loadPersistedPiiReviewMap();
 
-                // Preserve explicit review decisions across re-scans (deterministic IDs make this safe)
+                // Preserve explicit review decisions across re-scans and page reloads (deterministic IDs make this safe)
                 const merged = fresh.map(f => {
                     const prior = priorById.get(f.id);
-                    if (prior && prior.resolvedAt) {
+                    const persisted = persistedById[f.id];
+                    const carry = (prior && prior.resolvedAt) ? prior : (persisted && persisted.resolvedAt ? persisted : null);
+                    if (carry) {
                         return Object.assign({}, f, {
-                            action: prior.action,
-                            status: prior.status,
-                            resolvedAt: prior.resolvedAt,
+                            action: carry.action,
+                            status: carry.status,
+                            resolvedAt: carry.resolvedAt,
                             carriedOver: true
                         });
                     }
@@ -1184,7 +1274,7 @@
             tbody.innerHTML = html;
         }
 
-        function piiBulkResolve() {
+        async function piiBulkResolve() {
             const unresolved = getPiiUnresolved();
             if (unresolved.length === 0) return;
             const now = Date.now();
@@ -1193,6 +1283,7 @@
                 f.status = 'resolved';
                 f.resolvedAt = now;
             });
+            await persistPiiReviewMap();
             renderPiiStats();
             renderPiiFindingsTable(null);
             updatePiiEnforcementUI();
@@ -1312,7 +1403,7 @@
             updatePiiEnforcementUI();
         }
 
-        function updateFindingAction(id, action) {
+        async function updateFindingAction(id, action) {
             const f = pbgcPiiFindings.find(x => x.id === id);
             if (!f) return;
             if (action === 'pending') {
@@ -1324,6 +1415,7 @@
                 f.status = 'resolved';
                 f.resolvedAt = Date.now();
             }
+            await persistPiiReviewMap();
             renderPiiStats();
             renderPiiFindingsTable(null);
             updatePiiEnforcementUI();
@@ -1402,6 +1494,7 @@
             renderResultsGrid();
             updateTokenEstimate();
             pbgcPiiFindings = [];
+            await clearPersistedPiiReviewMap();
             piiScanState = 'not_scanned';
             piiLastScanAt = null;
             piiExportOverride = null;
@@ -1420,6 +1513,65 @@
             if (!applyBtn) return;
             applyBtn.classList.remove('bg-red-700', 'ring-2', 'ring-red-400', 'ring-offset-2', 'ring-offset-slate-950');
             applyBtn.textContent = 'Apply Redactions to Corpus';
+        }
+
+        function buildPiiComplianceReport() {
+            const unresolved = getPiiUnresolved();
+            return {
+                generatedAt: new Date().toISOString(),
+                scanState: piiScanState,
+                lastScanAt: piiLastScanAt ? new Date(piiLastScanAt).toISOString() : null,
+                documentsInQueue: fileQueue.length,
+                findingsTotal: pbgcPiiFindings.length,
+                unresolvedCriticalHigh: unresolved.length,
+                overrideActive: !!piiExportOverride,
+                overrideAcknowledgedAt: piiExportOverride ? new Date(piiExportOverride.acknowledgedAt).toISOString() : null,
+                findings: pbgcPiiFindings.map(f => ({
+                    id: f.id,
+                    file: f.file,
+                    fileId: f.fileId,
+                    type: f.type,
+                    severity: f.severity,
+                    masked: f.masked,
+                    action: f.action,
+                    status: f.status,
+                    policy: f.policy,
+                    resolvedAt: f.resolvedAt ? new Date(f.resolvedAt).toISOString() : null,
+                    scannedAt: f.scannedAt ? new Date(f.scannedAt).toISOString() : null
+                }))
+            };
+        }
+
+        function downloadBlob(blob, fileName) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function exportPiiComplianceReportJson() {
+            const report = buildPiiComplianceReport();
+            const stamp = getFormattedTimestamp();
+            downloadBlob(new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' }), `pii-compliance-report-${stamp}.json`);
+            showToast('Downloaded PII compliance JSON report', 'download');
+        }
+
+        function exportPiiComplianceReportCsv() {
+            const report = buildPiiComplianceReport();
+            const rows = [
+                ['id','file','fileId','type','severity','masked','action','status','policy','resolvedAt','scannedAt']
+            ];
+            report.findings.forEach(f => {
+                rows.push([f.id, f.file, f.fileId, f.type, f.severity, f.masked, f.action, f.status, f.policy, f.resolvedAt || '', f.scannedAt || '']);
+            });
+            const csv = rows.map(row => row.map(v => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`).join(',')).join('\n');
+            const stamp = getFormattedTimestamp();
+            downloadBlob(new Blob([csv], { type: 'text/csv;charset=utf-8' }), `pii-compliance-report-${stamp}.csv`);
+            showToast('Downloaded PII compliance CSV report', 'download');
         }
 
         // State management
@@ -2001,6 +2153,7 @@ previewUrl
             document.getElementById('queueEtaText').textContent = 'Calculating...';
             
             db.pages.clear().then(() => updateDbCountBadge());
+            db.meta.clear();
             updateTokenEstimate();
             refreshPiiBadge();
             showToast('Queue cleared — stored PII disposed per IM 15-03', 'trash-2');

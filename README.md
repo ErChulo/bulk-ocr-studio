@@ -8,6 +8,7 @@
 ![Storage](https://img.shields.io/badge/storage-IndexedDB-orange.svg)
 ![Air-Gapped](https://img.shields.io/badge/air--gapped-100%25-success.svg)
 ![PBGC PII](https://img.shields.io/badge/PBGC-PII%20Compliant-8b5cf6.svg)
+![Demo](https://img.shields.io/badge/demo-live-brightgreen.svg)
 
 **Bulk OCR & LLM Pipeline Studio** is a 100% client-side, browser-based document ingestion and Optical Character Recognition (OCR) studio. It ingests, parses, and packages messy multi-format document corpora into structured, schema-compliant **JSONC (JSON with Comments)** payloads ready for downstream Large Language Model (LLM) agents, Retrieval-Augmented Generation (RAG) pipelines, and automated data extraction modules — all with zero data leaving the device.
 
@@ -17,6 +18,9 @@ It ships in **two editions**:
 |---|---|---|
 | **Bulk OCR Studio** | `bulk-ocr-app/` | CDN-loaded libraries (needs network for first load) |
 | **Offline Bulk OCR Studio** | `o-bulk-ocr-studio/` | 100% vendored libraries — fully air-gapped, opens directly from disk |
+
+### 🌐 Live Demo
+The CDN edition is deployed at **[https://erchulo.github.io/bulk-ocr-studio/](https://erchulo.github.io/bulk-ocr-studio/)** — open it in any modern browser to try the CDN edition instantly.
 
 ---
 
@@ -31,8 +35,9 @@ It ships in **two editions**:
   * **Tabular Data**: CSV files
   * **Text & Markdown**: `.txt` and `.md` files with zero overhead
 * **Per-Page Processing & Inspection**: Inspect, review, and manually edit extracted text page-by-page side-by-side with original document previews and VS Code-style file icons.
-* **PBGC PII Detector & Redaction Studio**: Scans the full corpus for SSNs, EINs, bank/pension/participant identifiers, credit cards, DOBs, emails, phones, plan IDs, and credentials — then enforces PBGC IM 05-09, IM 10-03, and IM 15-03 with per-finding review, one-click corpus redaction, and export gates.
+* **PBGC PII Detector & Redaction Studio**: Scans the full corpus for SSNs, EINs, bank/pension/participant identifiers, credit cards, DOBs, emails, phones, plan IDs, and credentials — then enforces PBGC IM 05-09, IM 10-03, and IM 15-03 with per-finding review, persisted decisions, one-click corpus redaction, export gates, and downloadable compliance reports.
 * **AES-256 Protected ZIP Export**: PBGC-compliant password-protected (AES-256) batch export for secure offline transfer.
+* **PII Compliance Report Export**: Download JSON or CSV audit logs of findings, severities, statuses, decisions, and timestamps.
 * **LLM Schema & Prompt Packaging**: Embeds custom system prompts and target JSON Schemas directly into `.jsonc` exports so downstream LLMs know exactly how to validate and extract structured entities.
 * **Real-Time Token Estimation**: Calculates approximate token usage in real time to ensure your batches fit within LLM context limits.
 * **Acrobat-Style Low-Confidence Review Wizard**: Flags uncertain OCR words with a visual context-image crop and inline correction.
@@ -59,7 +64,9 @@ A built-in detector surfaces PII across the corpus with per-finding severity, ma
   * An **override acknowledgment** lets you record a risk decision in-session (cleared on the next scan).
   * **AES-256 ZIP export** stays available but now **requires a password** whenever unresolved findings exist.
 * **Review ergonomics**: severity/status filter, bulk "Resolve all critical/high", and an **undo** path ("Set Back to Pending") for misclicks.
+* **Decisions survive reload**: review choices now persist to IndexedDB, so a page refresh no longer wipes your PII review work.
 * **Two-step redaction confirmation**: applying redactions now asks you to confirm ("Redact X / Erase Y in Z doc(s)") before permanently editing stored text — aligning with IM 15-03 disposal-friendly records management.
+* **Compliance report export**: JSON and CSV audit reports can be downloaded directly from the PII modal.
 * **Accessibility**: Esc closes modals, focus management on open, aria-live scan status, and fixed preview image handling.
 
 ---
@@ -101,6 +108,16 @@ A built-in detector surfaces PII across the corpus with per-finding severity, ma
 
 ---
 
+## 📸 Screenshots
+
+### PBGC PII Detector — Empty State (pre-scan)
+![PII Modal Empty](pii-modal-empty.png)
+
+### PBGC PII Detector — Findings with Enforcement Gate
+![PII Modal Results](pii-modal-results.png)
+
+---
+
 ## 📂 Repository Structure
 
 ```text
@@ -113,7 +130,7 @@ bulk-ocr-studio/
 │   └── vendor/                 # 100% vendored libraries (zero CDN calls)
 │       ├── core/               # Tesseract WASM binaries
 │       ├── langs/              # eng + spa traineddata offline models
-│       └── *.js                # Tesseract, PDF.js, SheetJS, mammoth, JSZip, Lucide, Dexie
+│       └── *.js                # Tesseract, PDF.js, SheetJS, mammoth, JSZip, Lucide
 ├── design-system/
 │   └── MASTER.md               # Global design tokens and architecture standards
 ├── uploads/                    # Sample uploads for local testing
@@ -129,7 +146,7 @@ bulk-ocr-studio/
 
 | Version | Highlights |
 |---|---|
-| **v1.10.0** | PBGC PII enforcement lifecycle: manual scan, deterministic findings, decision persistence, export gates + override, mandatory ZIP password, bulk resolve, undo, two-step redaction confirmation, Esc/a11y polish, diagnostics fix |
+| **v1.10.0** | PBGC PII enforcement lifecycle: manual scan, deterministic findings, decision persistence (now persisted to IndexedDB), export gates + override, mandatory ZIP password, bulk resolve, undo, JSON/CSV compliance report export, two-step redaction confirmation, Esc/a11y polish, diagnostics fix |
 | **v1.9.0** | PBGC PII Detector & Redaction Studio (IM 05-09/IM 10-03), AES-256 ZIP export, Word macro (`.docm`) + Excel macro (`.xlsm`/`.xlsb`) support, VS Code-style inspector icons, JSONC live preview, low-confidence wizard polish |
 | **v1.8.0** | Offline edition maturity: vendored Tailwind + all libraries for zero-CDN air-gapped use, Spanish OCR model, timestamp naming, JSONC packaging refinements |
 | **v1.7.0** | Architecture, ui-ux-pro-max, and impeccable fine-tuning pass |

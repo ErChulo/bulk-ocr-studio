@@ -1,0 +1,61 @@
+name: Sync & PII Regression Check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  sync-check:
+    name: Verify PII blocks identical across editions
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify PII JS block identical
+        run: |
+          node -e "
+            const fs = require('fs');
+            const a = fs.readFileSync('o-bulk-ocr-studio/index.html', 'utf8');
+            const b = fs.readFileSync('bulk-ocr-app/index.html', 'utf8');
+            const ex = (s) => s.match(/(?:\\/\\/ PBGC PII Detector & Redaction Engine[\\s\\S]*?)(?=\\n        \\/\\/ State management)/)[0];
+            const identical = ex(a) === ex(b);
+            console.log('PII JS identical:', identical);
+            if (!identical) process.exit(1);
+          "
+
+      - name: Verify PII HTML modal identical
+        run: |
+          node -e "
+            const fs = require('fs');
+            const a = fs.readFileSync('o-bulk-ocr-studio/index.html', 'utf8');
+            const b = fs.readFileSync('bulk-ocr-app/index.html', 'utf8');
+            const ex = (s) => s.match(/(?:<!-- PBGC PII Detection & Redaction Modal[\\s\\S]*?)(?=\\n    <!-- )/)[0];
+            const identical = ex(a) === ex(b);
+            console.log('PII HTML modal identical:', identical);
+            if (!identical) process.exit(1);
+          "
+
+  html-script-syntax:
+    name: Validate inline script syntax
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate inline scripts in both editions
+        run: |
+          node -e "
+            const fs = require('fs');
+            for (const file of ['o-bulk-ocr-studio/index.html', 'bulk-ocr-app/index.html']) {
+              const html = fs.readFileSync(file, 'utf8');
+              const scripts = [...html.matchAll(/<script(?![^>]*src=)[^>]*>([\\s\\S]*?)<\\/script>/g)].map(m => m[1]).filter(Boolean);
+              scripts.forEach((s, i) => new Function(s));
+              console.log(file + ': OK (' + scripts.length + ' inline scripts)');
+            }
+          "
