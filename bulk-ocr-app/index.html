@@ -864,8 +864,15 @@
         let pbgcPiiFindings = [];
 
         function openPbgcPiiModal() {
-            toggleModal('pbgcPiiModal', true);
-            runPbgcPiiScan();
+            console.log('[PII] scan button clicked. queue docs =', fileQueue.length, 'docs with text =', fileQueue.filter(i => i.text).length);
+            try {
+                if (typeof showToast === 'function') showToast('PII scan started — ' + fileQueue.length + ' document(s) in queue', 'shield-alert');
+                toggleModal('pbgcPiiModal', true);
+                runPbgcPiiScan();
+            } catch (e) {
+                console.error('[PII] scan failed:', e);
+                if (typeof showToast === 'function') showToast('PII scan error: ' + (e && e.message ? e.message : e), 'alert-circle');
+            }
         }
 
         // Use string patterns compiled safely at runtime to prevent any escape sequence corruption
