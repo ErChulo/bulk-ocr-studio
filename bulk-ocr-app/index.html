@@ -491,6 +491,26 @@
                     </div>
                 </div>
 
+                <!-- Scan Diagnostics: queue/text state so "0 findings" is explainable -->
+                <div id="piiScanDiagnostics" class="hidden bg-slate-900/70 border border-slate-700 rounded-2xl p-4 text-[11px] space-y-2.5">
+                    <div class="flex items-start justify-between gap-3 flex-wrap">
+                        <div class="flex items-center gap-2 text-slate-200 min-w-0">
+                            <i data-lucide="info" class="w-4 h-4 text-indigo-400 shrink-0"></i>
+                            <span id="piiDiagnosticMessage" class="leading-snug">Ready to scan.</span>
+                        </div>
+                        <button id="piiLoadSavedBatchBtn" onclick="loadPiiSavedBatch()" class="hidden px-3 py-1.5 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 font-semibold text-[10px] rounded-lg border border-emerald-500/30 transition-all cursor-pointer shrink-0">
+                            Load Saved Batch
+                        </button>
+                    </div>
+                    <div id="piiDetectorErrors" class="hidden text-amber-400 font-mono text-[10px] leading-relaxed"></div>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-slate-400">
+                        <div>Docs in queue: <span id="piiDiagDocs" class="text-slate-200 font-semibold">0</span></div>
+                        <div>Docs with text: <span id="piiDiagDocsText" class="text-slate-200 font-semibold">0</span></div>
+                        <div>Chars scanned: <span id="piiDiagChars" class="text-slate-200 font-semibold">0</span></div>
+                        <div>Detectors failed: <span id="piiDiagFailed" class="text-slate-200 font-semibold">0</span></div>
+                    </div>
+                </div>
+
                 <!-- Findings Table -->
                 <div class="border border-slate-800 rounded-2xl overflow-hidden bg-black shadow-inner">
                     <table class="w-full text-left text-xs">
@@ -807,6 +827,7 @@
                     updateTokenEstimate();
                     updateExportButtonsState();
                     showToast(`Restored ${fileQueue.length} items from previous session DB`, 'database');
+                    refreshPiiBadge();
                 }
             } catch(e) {
                 console.error('Failed to auto-load DB session:', e);
@@ -834,10 +855,13 @@
             { type: "AWS_KEY", pattern: "\\bAKIA[0-9A-Z]{16}\\b", flags: "g", severity: "critical", confidence: 0.98, policy: "Credential or technical secret" }
         ];
 
-        function runPbgcPiiScan() {
-            pbgcPiiFindings = [];
+        function scanPbgcCorpus() {
+            const findings = [];
+            const diag = { docs: fileQueue.length, docsWithText: 0, chars: 0, failedDetectors: [] };
             fileQueue.forEach(item => {
                 if (!item.text) return;
+                diag.docsWithText++;
+                diag.chars += item.text.length;
                 pbgcPatterns.forEach(det => {
                     try {
                         const rx = new RegExp(det.pattern, det.flags);
@@ -848,7 +872,7 @@
                             if (!val || seenVals.has(val)) continue;
                             seenVals.add(val);
                             const masked = val.length <= 4 ? "****" : "*".repeat(val.length - 4) + val.slice(-4);
-                            pbgcPiiFindings.push({
+                            findings.push({
                                 id: 'pii_' + Math.random().toString(36).substring(2, 9),
                                 fileId: item.id,
                                 file: item.name,
@@ -863,9 +887,64 @@
                         }
                     } catch (e) {
                         console.error('PII Detector error for ' + det.type + ':', e);
+                        if (!diag.failedDetectors.includes(det.type)) diag.failedDetectors.push(det.type);
                     }
                 });
             });
+            return { findings, diag };
+        }
+
+        function refreshPiiBadge() {
+            try {
+                const badge = document.getElementById('piiCountBadge');
+                if (!badge) return;
+                badge.textContent = scanPbgcCorpus().findings.length;
+            } catch (e) {
+                console.error('PII badge refresh error:', e);
+            }
+        }
+
+        function updatePiiDiagnostics(diag) {
+            const box = document.getElementById('piiScanDiagnostics');
+            if (!box) return;
+            const msgEl = document.getElementById('piiDiagnosticMessage');
+            const loadBtn = document.getElementById('piiLoadSavedBatchBtn');
+            const errEl = document.getElementById('piiDetectorErrors');
+            document.getElementById('piiDiagDocs').textContent = diag.docs;
+            document.getElementById('piiDiagDocsText').textContent = diag.docsWithText;
+            document.getElementById('piiDiagChars').textContent = diag.chars.toLocaleString();
+            document.getElementById('piiDiagFailed').textContent = diag.failedDetectors.length;
+            if (diag.failedDetectors.length > 0) {
+                errEl.textContent = 'Detectors failed to load: ' + diag.failedDetectors.join(', ') + '. See browser console (F12) for details.';
+                errEl.classList.remove('hidden');
+            } else {
+                errEl.classList.add('hidden');
+            }
+            if (diag.docs === 0) {
+                msgEl.textContent = 'No documents in the queue. Add files via the drop zone, or click "Load Saved Batch" to restore your previous session.';
+                loadBtn.classList.remove('hidden');
+            } else if (diag.docsWithText === 0) {
+                msgEl.textContent = diag.docs + ' document(s) in queue but none have extracted text yet. Run the processing/OCR queue first, then scan again.';
+                loadBtn.classList.add('hidden');
+            } else {
+                msgEl.textContent = 'Scanned ' + diag.docsWithText + ' of ' + diag.docs + ' document(s) — ' + diag.chars.toLocaleString() + ' characters of extracted text.';
+                loadBtn.classList.add('hidden');
+            }
+            box.classList.remove('hidden');
+        }
+
+        async function loadPiiSavedBatch() {
+            try {
+                await loadBatchFromDB();
+            } catch (e) {
+                console.error('Failed to load saved batch from PII modal:', e);
+            }
+            runPbgcPiiScan();
+        }
+
+        function runPbgcPiiScan() {
+            const { findings, diag } = scanPbgcCorpus();
+            pbgcPiiFindings = findings;
 
             document.getElementById('piiCountBadge').textContent = pbgcPiiFindings.length;
             document.getElementById('piiStatTotal').textContent = pbgcPiiFindings.length;
@@ -875,9 +954,19 @@
             document.getElementById('piiStatRedact').textContent = redactCount;
             document.getElementById('piiStatFP').textContent = pbgcPiiFindings.filter(f => f.action === 'false_positive').length;
 
+            updatePiiDiagnostics(diag);
+
             const tbody = document.getElementById('pbgcPiiFindingsTableBody');
             if (pbgcPiiFindings.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-500 italic font-sans">No PII findings detected across corpus. All clear under PBGC IM 05-09 & IM 10-03.</td></tr>`;
+                let emptyMsg;
+                if (diag.docs === 0) {
+                    emptyMsg = 'No documents in the queue to scan. Add files or load your saved batch, then click "Run Full Scan".';
+                } else if (diag.docsWithText === 0) {
+                    emptyMsg = 'Documents are present but have no extracted text yet. Run the processing/OCR queue first.';
+                } else {
+                    emptyMsg = 'No PII findings detected across corpus. All clear under PBGC IM 05-09 & IM 10-03.';
+                }
+                tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-500 italic font-sans">${emptyMsg}</td></tr>`;
                 return;
             }
 
@@ -1404,6 +1493,7 @@
                 renderResultsGrid();
                 updateExportButtonsState();
                 document.getElementById('startBtn').removeAttribute('disabled');
+                refreshPiiBadge();
             }
         }
 
@@ -1451,6 +1541,7 @@ previewUrl
                 }
 
                 showToast(`Successfully loaded ${fileQueue.length} items from IndexedDB!`, 'database');
+                refreshPiiBadge();
                 
                 // Visual CTA Banner in UI
                 showDbLoadedBanner(fileQueue.length, completedCount);
@@ -1732,6 +1823,7 @@ previewUrl
                 document.getElementById('previewJsoncModalBtn').removeAttribute('disabled');
                 showToast(`Batch processing completed! ${completedCount} items processed successfully.`, 'check-circle');
             }
+            refreshPiiBadge();
         }
 
         function formatTimeRemaining(seconds) {
