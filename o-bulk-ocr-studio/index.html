@@ -12,7 +12,7 @@
     <script src="./vendor/pdf.min.js"></script>
     <script src="./vendor/mammoth.browser.min.js"></script>
     <script src="./vendor/xlsx.full.min.js"></script>
-    <script src="./vendor/jszip.min.js"></script>
+    <script src="./vendor/zip.min.js"></script>
     <!-- Native Pure IndexedDB Wrapper (Zero external DB dependencies) -->
     <script src="./vendor/lucide.js"></script>
     <script>
@@ -82,7 +82,7 @@
                 <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
                     Offline Bulk OCR Studio 
                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold tracking-wider uppercase bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">100% Client-Side</span>
-                    <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-mono font-medium bg-slate-800 text-slate-300 border border-slate-700">v1.10.0</span>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-mono font-medium bg-slate-800 text-slate-300 border border-slate-700">v1.10.1</span>
                 </h1>
                 <p class="text-xs text-slate-400">Extract, parse, and package documents into clean JSONC payloads for downstream LLMs</p>
             </div>
@@ -608,6 +608,7 @@
             
             <div class="space-y-4 text-xs text-slate-300">
                 <p class="text-slate-400">PBGC privacy directives require sensitive packages to be password-protected and encrypted during transport. Enter a secure encryption password below:</p>
+                <p class="text-slate-500">The archive is written using the WinZip AE-2 AES-256 standard. Use 7-Zip, WinZip, Windows 11 Explorer, macOS Archive Utility (10.15+), or this app to open it. The Linux <span class="font-mono">unzip</span> CLI does not support this format.</p>
                 
                 <div class="space-y-1.5">
                     <label class="font-semibold text-slate-200">Archive Encryption Password</label>
@@ -770,6 +771,9 @@
         // Configure PDF.js worker
         if (typeof pdfjsLib !== 'undefined') {
             pdfjsLib.GlobalWorkerOptions.workerSrc = './vendor/pdf.worker.min.js';
+        }
+        if (typeof zip !== 'undefined' && typeof zip.configure === 'function') {
+            zip.configure({ useWebWorkers: false });
         }
 
         // Native Pure IndexedDB Wrapper (Zero external dependencies)
@@ -2861,32 +2865,30 @@ previewUrl
 
             const completedItems = fileQueue.filter(f => f.status === 'completed');
             if (completedItems.length === 0) return;
+            if (typeof zip === 'undefined' || !zip.ZipWriter || !zip.BlobWriter || !zip.TextReader) {
+                showToast('ZIP encryption library failed to load', 'alert-circle');
+                return;
+            }
 
-            showLoadingSpinner('Generating Protected ZIP', password ? 'Compressing and encrypting with AES...' : 'Compressing files into ZIP...');
+            showLoadingSpinner('Generating Protected ZIP', password ? 'Compressing and encrypting with WinZip AES-256...' : 'Compressing files into ZIP...');
             try {
-                const zip = new JSZip();
                 const timestamp = getFormattedTimestamp();
                 const folderName = `batch-${timestamp}`;
-                const resultsFolder = zip.folder(folderName);
+                const writer = new zip.ZipWriter(new zip.BlobWriter('application/zip'));
+                const entryOptions = password ? { password, encryptionStrength: 3 } : {};
 
-                completedItems.forEach(item => {
+                for (const item of completedItems) {
                     const baseName = item.name.replace(/\.[^/.]+$/, '');
-                    resultsFolder.file(`${baseName}.txt`, item.text || '');
-                });
+                    await writer.add(`${folderName}/${baseName}.txt`, new zip.TextReader(item.text || ''), entryOptions);
+                }
 
                 let mergedContent = '';
                 completedItems.forEach((item, idx) => {
                     mergedContent += `=== ITEM ${idx+1}: ${item.name} ===\n\n${item.text || ''}\n\n\n`;
                 });
-                resultsFolder.file('_merged_all_documents.txt', mergedContent);
+                await writer.add(`${folderName}/_merged_all_documents.txt`, new zip.TextReader(mergedContent), entryOptions);
 
-                const genOpts = { type: 'blob' };
-                if (password) {
-                    genOpts.password = password;
-                    genOpts.encryptStrength = 3; // AES-256
-                }
-
-                const content = await zip.generateAsync(genOpts);
+                const content = await writer.close();
                 const url = URL.createObjectURL(content);
                 const a = document.createElement('a');
                 a.href = url;
@@ -2896,7 +2898,7 @@ previewUrl
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
 
-                showToast(password ? 'Password-protected AES ZIP downloaded successfully' : 'ZIP archive downloaded successfully', 'check-circle');
+                showToast(password ? 'Password-protected AES-256 ZIP downloaded successfully' : 'ZIP archive downloaded successfully', 'check-circle');
             } catch (err) {
                 console.error(err);
                 showToast('Failed to generate ZIP archive', 'alert-circle');

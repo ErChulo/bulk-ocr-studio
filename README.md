@@ -1,6 +1,6 @@
 # Bulk OCR & LLM Pipeline Studio
 
-![Version](https://img.shields.io/badge/version-v1.10.0-blue.svg)
+![Version](https://img.shields.io/badge/version-v1.10.1-blue.svg)
 ![Release](https://img.shields.io/github/v/release/ErChulo/bulk-ocr-studio?color=%236366f1&label=release)
 ![Last Commit](https://img.shields.io/github/last-commit/ErChulo/bulk-ocr-studio)
 ![License](https://img.shields.io/github/license/ErChulo/bulk-ocr-studio)
@@ -43,7 +43,7 @@ The CDN edition is deployed at **[https://erchulo.github.io/bulk-ocr-studio/](ht
 * **Acrobat-Style Low-Confidence Review Wizard**: Flags uncertain OCR words with a visual context-image crop and inline correction.
 
 ### 2. How It Works (Architecture)
-* **Zero Server Calls (100% Client-Side)**: All PDF rendering (PDF.js), OCR inferencing (Tesseract.js), document parsing (mammoth.js, SheetJS), and ZIP compression/encryption (JSZip) run locally in your browser using WebAssembly and Web Workers. Your files never leave your computer.
+* **Zero Server Calls (100% Client-Side)**: All PDF rendering (PDF.js), OCR inferencing (Tesseract.js), document parsing (mammoth.js, SheetJS), and ZIP compression/encryption (zip.js with real WinZip AE-2 AES-256 support) run locally in your browser using WebAssembly and Web Workers. Your files never leave your computer.
 * **Native IndexedDB Persistence**: Results auto-save to IndexedDB through a lightweight native wrapper (no external dependency). Your work survives browser refreshes and accidental tab closures, and a saved batch can be restored on the next launch.
 * **`file://` Protocol Support**: The offline edition auto-detects local-disk execution and disables PDF workers / Tesseract blob workers so it runs with zero server from double-clicked `index.html` (verified on Chromium and Brave).
 
@@ -52,11 +52,12 @@ Traditional OCR tools output flat text or fragile formats without provenance, ma
 
 ---
 
-## 🛡️ PBGC PII Detector & Redaction (v1.9.0 → v1.10.0)
+## 🛡️ PBGC PII Detector & Redaction (v1.9.0 → v1.10.1)
 
 A built-in detector surfaces PII across the corpus with per-finding severity, masked matches, policy references, and review actions (Redact / Erase / Retain / False Positive).
 
-### v1.10.0 — Enforcement & Review Lifecycle
+### v1.10.1 — Real AES ZIP Security Fix
+* **Real ZIP encryption**: replaces JSZip's fake password flag with **zip.js** and genuine WinZip AE-2 AES-256 encryption. The archive is now actually unreadable without the correct password.
 * **Manual scan lifecycle**: the modal opens with a clear "not yet scanned" state; you click **Run PBGC Scan** and watch scanning feedback, instead of an invisible auto-scan on open.
 * **Deterministic findings**: stable, hash-based finding IDs — your review decisions **persist across re-scans** (no more wiping after the button).
 * **Enforcement gates (IM 05-09 / IM 10-03)**:
@@ -130,7 +131,7 @@ bulk-ocr-studio/
 │   └── vendor/                 # 100% vendored libraries (zero CDN calls)
 │       ├── core/               # Tesseract WASM binaries
 │       ├── langs/              # eng + spa traineddata offline models
-│       └── *.js                # Tesseract, PDF.js, SheetJS, mammoth, JSZip, Lucide
+│       └── *.js                # Tesseract, PDF.js, SheetJS, mammoth, zip.js, Lucide
 ├── design-system/
 │   └── MASTER.md               # Global design tokens and architecture standards
 ├── uploads/                    # Sample uploads for local testing
@@ -146,7 +147,8 @@ bulk-ocr-studio/
 
 | Version | Highlights |
 |---|---|
-| **v1.10.0** | PBGC PII enforcement lifecycle: manual scan, deterministic findings, decision persistence (now persisted to IndexedDB), export gates + override, mandatory ZIP password, bulk resolve, undo, JSON/CSV compliance report export, two-step redaction confirmation, Esc/a11y polish, diagnostics fix |
+| **v1.10.1** | Security fix: replace JSZip with zip.js for real WinZip AE-2 AES-256 ZIP encryption, add compatible-tool hint, keep IndexedDB-persisted PII review decisions and JSON/CSV compliance report export |
+| **v1.10.0** | PBGC PII enforcement lifecycle: manual scan, deterministic findings, decision persistence, export gates + override, mandatory ZIP password, bulk resolve, undo, two-step redaction confirmation, Esc/a11y polish, diagnostics fix |
 | **v1.9.0** | PBGC PII Detector & Redaction Studio (IM 05-09/IM 10-03), AES-256 ZIP export, Word macro (`.docm`) + Excel macro (`.xlsm`/`.xlsb`) support, VS Code-style inspector icons, JSONC live preview, low-confidence wizard polish |
 | **v1.8.0** | Offline edition maturity: vendored Tailwind + all libraries for zero-CDN air-gapped use, Spanish OCR model, timestamp naming, JSONC packaging refinements |
 | **v1.7.0** | Architecture, ui-ux-pro-max, and impeccable fine-tuning pass |

@@ -1,6 +1,6 @@
 # Offline Bulk OCR Studio (`o-bulk-ocr-studio`)
 
-![Version](https://img.shields.io/badge/version-v1.10.0--offline-blue.svg)
+![Version](https://img.shields.io/badge/version-v1.10.1--offline-blue.svg)
 ![Air-Gapped](https://img.shields.io/badge/air--gapped-100%25-success.svg)
 ![IndexedDB](https://img.shields.io/badge/storage-IndexedDB-orange.svg)
 ![License](https://img.shields.io/github/license/ErChulo/bulk-ocr-studio)
@@ -10,7 +10,7 @@
 ---
 
 ## 🔒 100% Offline & Vendored Architecture
-All core JavaScript libraries—including **Tesseract.js**, **PDF.js**, **SheetJS (xlsx)**, **JSZip**, **Dexie.js (IndexedDB)**, and **Lucide Icons**—are locally vendored inside the `./vendor/` directory and referenced via relative paths. 
+All core JavaScript libraries—including **Tesseract.js**, **PDF.js**, **SheetJS (xlsx)**, **zip.js** (real WinZip AE-2 AES-256 support), and **Lucide Icons**—are locally vendored inside the `./vendor/` directory and referenced via relative paths.
 
 * **Zero External Calls**: Once placed on your local machine or laptop, you can unplug your internet entirely. The app runs completely inside your browser's sandboxed WebAssembly and Web Worker environment.
 * **IndexedDB Caching**: Document processing, regex searches, low-confidence word reviews, and JSONC exports all execute locally with zero data leakage.
