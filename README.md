@@ -1,6 +1,6 @@
 # Bulk OCR & LLM Pipeline Studio
 
-![Version](https://img.shields.io/badge/version-v1.10.1-blue.svg)
+![Version](https://img.shields.io/badge/version-v1.10.2-blue.svg)
 ![Release](https://img.shields.io/github/v/release/ErChulo/bulk-ocr-studio?color=%236366f1&label=release)
 ![Last Commit](https://img.shields.io/github/last-commit/ErChulo/bulk-ocr-studio)
 ![License](https://img.shields.io/github/license/ErChulo/bulk-ocr-studio)
@@ -52,11 +52,15 @@ Traditional OCR tools output flat text or fragile formats without provenance, ma
 
 ---
 
-## 🛡️ PBGC PII Detector & Redaction (v1.9.0 → v1.10.1)
+## 🛡️ PBGC PII Detector & Redaction (v1.9.0 → v1.10.2)
 
 A built-in detector surfaces PII across the corpus with per-finding severity, masked matches, policy references, and review actions (Redact / Erase / Retain / False Positive).
 
-### v1.10.1 — Real AES ZIP Security Fix
+### v1.10.2 — PII Review Clarity & Guidance
+* **Apply Redactions clarity**: the footer button now shows why it is disabled (e.g. `Apply Redactions to Corpus — 3 pending`) and becomes plainly enabled as soon as the final critical/high finding is resolved.
+* **Auto-guidance to blocking findings**: after a scan, the modal auto-scrolls and highlights the first unresolved critical/high finding so you don't miss the rows below the fold.
+* **Gate banner navigation**: the enforcement banner now shows clickable finding pills, a `Go to first pending` shortcut, and an inline `Resolve all here` action.
+* **Better ordering**: findings are now sorted with unresolved critical/high rows first, then pending, then resolved, making the blocking rows impossible to miss.
 * **Real ZIP encryption**: replaces JSZip's fake password flag with **zip.js** and genuine WinZip AE-2 AES-256 encryption. The archive is now actually unreadable without the correct password.
 * **Manual scan lifecycle**: the modal opens with a clear "not yet scanned" state; you click **Run PBGC Scan** and watch scanning feedback, instead of an invisible auto-scan on open.
 * **Deterministic findings**: stable, hash-based finding IDs — your review decisions **persist across re-scans** (no more wiping after the button).
@@ -64,7 +68,6 @@ A built-in detector surfaces PII across the corpus with per-finding severity, ma
   * Plaintext exports (TXT / JSON / JSONC) are **blocked** while critical/high findings await review.
   * An **override acknowledgment** lets you record a risk decision in-session (cleared on the next scan).
   * **AES-256 ZIP export** stays available but now **requires a password** whenever unresolved findings exist.
-* **Review ergonomics**: severity/status filter, bulk "Resolve all critical/high", and an **undo** path ("Set Back to Pending") for misclicks.
 * **Decisions survive reload**: review choices now persist to IndexedDB, so a page refresh no longer wipes your PII review work.
 * **Two-step redaction confirmation**: applying redactions now asks you to confirm ("Redact X / Erase Y in Z doc(s)") before permanently editing stored text — aligning with IM 15-03 disposal-friendly records management.
 * **Compliance report export**: JSON and CSV audit reports can be downloaded directly from the PII modal.
@@ -147,6 +150,7 @@ bulk-ocr-studio/
 
 | Version | Highlights |
 |---|---|
+| **v1.10.2** | UX clarity fix: Apply Redactions pending counter, auto-scroll/highlight to first unresolved finding, clickable gate pills, in-banner resolve-all shortcut, final-resolution enable toast, and critical/high-first sort |
 | **v1.10.1** | Security fix: replace JSZip with zip.js for real WinZip AE-2 AES-256 ZIP encryption, add compatible-tool hint, keep IndexedDB-persisted PII review decisions and JSON/CSV compliance report export |
 | **v1.10.0** | PBGC PII enforcement lifecycle: manual scan, deterministic findings, decision persistence, export gates + override, mandatory ZIP password, bulk resolve, undo, two-step redaction confirmation, Esc/a11y polish, diagnostics fix |
 | **v1.9.0** | PBGC PII Detector & Redaction Studio (IM 05-09/IM 10-03), AES-256 ZIP export, Word macro (`.docm`) + Excel macro (`.xlsm`/`.xlsb`) support, VS Code-style inspector icons, JSONC live preview, low-confidence wizard polish |

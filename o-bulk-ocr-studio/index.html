@@ -82,7 +82,7 @@
                 <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
                     Offline Bulk OCR Studio 
                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold tracking-wider uppercase bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">100% Client-Side</span>
-                    <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-mono font-medium bg-slate-800 text-slate-300 border border-slate-700">v1.10.1</span>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-mono font-medium bg-slate-800 text-slate-300 border border-slate-700">v1.10.2</span>
                 </h1>
                 <p class="text-xs text-slate-400">Extract, parse, and package documents into clean JSONC payloads for downstream LLMs</p>
             </div>
@@ -518,12 +518,19 @@
                 <div id="piiEnforcementGate" class="hidden bg-amber-950/40 border border-amber-500/40 rounded-2xl p-4 space-y-2.5">
                     <div class="flex items-start gap-2 text-amber-200 text-[11px] font-sans leading-snug">
                         <i data-lucide="lock-keyhole" class="w-4 h-4 shrink-0 mt-0.5"></i>
-                        <div>
+                        <div class="space-y-2 min-w-0 flex-1">
                             <p class="font-semibold" id="piiGateMessage">Critical/high findings await review.</p>
-                            <p class="text-amber-200/90 mt-1">Per PBGC IM 05-09 & IM 10-03, critical/high PII must be resolved (redacted, erased, or reviewed) before the corpus leaves this workspace. Encrypted ZIP export remains available.</p>
+                            <p class="text-amber-200/90">Per PBGC IM 05-09 & IM 10-03, critical/high PII must be resolved (redacted, erased, or reviewed) before the corpus leaves this workspace. Encrypted ZIP export remains available.</p>
+                            <div id="piiGateFindings" class="flex flex-wrap gap-1.5"></div>
                         </div>
                     </div>
                     <div class="flex items-center gap-2 text-[11px] flex-wrap">
+                        <button onclick="piiFocusFirstUnresolvedFinding()" class="px-3 py-1.5 bg-amber-600/20 hover:bg-amber-600/30 text-amber-200 font-semibold text-[10px] rounded-lg border border-amber-500/40 transition-all cursor-pointer shrink-0">
+                            Go to first pending
+                        </button>
+                        <button onclick="piiBulkResolve()" class="px-3 py-1.5 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-200 font-semibold text-[10px] rounded-lg border border-indigo-500/40 transition-all cursor-pointer shrink-0">
+                            Resolve all here
+                        </button>
                         <input type="checkbox" id="piiGateOverrideChk" class="accent-amber-500" onchange="document.getElementById('piiGateOverrideBtn').disabled = !this.checked">
                         <label for="piiGateOverrideChk" class="text-amber-200">I acknowledge the risk and authorize export of <span id="piiGateOverrideCount" class="font-bold">0</span> unresolved finding(s)</label>
                         <button id="piiGateOverrideBtn" onclick="piiAcknowledgeRisk()" disabled class="ml-auto px-3 py-1.5 bg-amber-600/20 hover:bg-amber-600/30 text-amber-200 font-semibold text-[10px] rounded-lg border border-amber-500/40 transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 shrink-0">
@@ -1154,6 +1161,9 @@
                 renderPiiStats();
                 renderPiiFindingsTable(diag);
                 updatePiiEnforcementUI();
+                if (getPiiUnresolved().length > 0) {
+                    setTimeout(() => piiFocusFirstUnresolvedFinding(), 120);
+                }
 
                 const crit = pbgcPiiFindings.filter(f => f.severity === 'critical' || f.severity === 'high').length;
                 showToast('Scan complete — ' + pbgcPiiFindings.length + ' finding(s), ' + crit + ' critical/high', 'shield-alert');
@@ -1209,6 +1219,35 @@
             piiSet('piiStatResolved', scanned ? pbgcPiiFindings.filter(f => f.status === 'resolved').length : dash);
         }
 
+        function piiSeverityRank(severity) {
+            return severity === 'critical' ? 0 : severity === 'high' ? 1 : severity === 'medium' ? 2 : 3;
+        }
+
+        function piiFindingSort(a, b) {
+            const aBlocking = (a.status !== 'resolved' && (a.severity === 'critical' || a.severity === 'high')) ? 0 : 1;
+            const bBlocking = (b.status !== 'resolved' && (b.severity === 'critical' || b.severity === 'high')) ? 0 : 1;
+            if (aBlocking !== bBlocking) return aBlocking - bBlocking;
+            if (a.status !== b.status) return a.status === 'pending' ? -1 : 1;
+            const sev = piiSeverityRank(a.severity) - piiSeverityRank(b.severity);
+            if (sev !== 0) return sev;
+            return a.file.localeCompare(b.file) || a.type.localeCompare(b.type);
+        }
+
+        function piiHighlightFindingRow(id, shouldScroll = true) {
+            const row = document.getElementById('pii-row-' + id);
+            if (!row) return;
+            if (shouldScroll) row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            row.classList.add('ring-2', 'ring-amber-400', 'ring-inset', 'bg-amber-500/5');
+            setTimeout(() => row.classList.remove('ring-2', 'ring-amber-400', 'ring-inset', 'bg-amber-500/5'), 1800);
+            const select = row.querySelector('select');
+            if (select) select.focus();
+        }
+
+        function piiFocusFirstUnresolvedFinding() {
+            const first = [...getPiiUnresolved()].sort(piiFindingSort)[0];
+            if (first) piiHighlightFindingRow(first.id, true);
+        }
+
         function renderPiiFindingsTable(diag) {
             const tbody = document.getElementById('pbgcPiiFindingsTableBody');
             const filterSel = document.getElementById('piiFilterStatus');
@@ -1216,7 +1255,6 @@
             const bulkBtn = document.getElementById('piiBulkResolveBtn');
             if (!tbody) return;
 
-            const pending = pbgcPiiFindings.filter(f => f.status === 'pending');
             const unresolved = getPiiUnresolved();
             if (countEl) countEl.textContent = pbgcPiiFindings.length;
             if (bulkBtn) bulkBtn.classList.toggle('hidden', unresolved.length === 0);
@@ -1235,20 +1273,21 @@
             }
 
             const filter = filterSel ? filterSel.value : 'all';
-            let rows = pbgcPiiFindings;
+            let rows = [...pbgcPiiFindings].sort(piiFindingSort);
             if (filter === 'unresolved') rows = rows.filter(f => f.status !== 'resolved' && (f.severity === 'critical' || f.severity === 'high'));
             else if (filter === 'pending') rows = rows.filter(f => f.status === 'pending');
             else if (filter === 'resolved') rows = rows.filter(f => f.status === 'resolved');
 
             let html = '';
             rows.forEach(f => {
+                const isBlocking = f.status !== 'resolved' && (f.severity === 'critical' || f.severity === 'high');
                 const sevClass = f.severity === 'critical' ? 'text-red-400 font-bold' : (f.severity === 'high' ? 'text-amber-400 font-semibold' : 'text-slate-400');
                 const sevBadge = '<span class="' + sevClass + '">' + f.severity.toUpperCase() + '</span>';
                 const statusPill = f.status === 'resolved'
                     ? '<span class="inline-flex items-center gap-1 text-emerald-300"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>Resolved</span>'
                     : '<span class="inline-flex items-center gap-1 text-sky-300"><span class="w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse"></span>Pending</span>';
                 html += `
-                    <tr class="hover:bg-slate-900/50 transition-colors">
+                    <tr id="pii-row-${f.id}" data-pii-unresolved="${isBlocking ? 'true' : 'false'}" class="hover:bg-slate-900/50 transition-colors ${isBlocking ? 'border-l-2 border-amber-500/50' : ''}">
                         <td class="p-3 text-slate-300 truncate max-w-[140px]" title="${piiEsc(f.file)}">${piiEsc(f.file)}</td>
                         <td class="p-3 text-indigo-300 font-semibold">${piiEsc(f.type)}</td>
                         <td class="p-3">${sevBadge}</td>
@@ -1285,7 +1324,7 @@
             renderPiiStats();
             renderPiiFindingsTable(null);
             updatePiiEnforcementUI();
-            showToast('Marked ' + unresolved.length + ' critical/high finding(s) as Redact — Apply Redactions is now enabled', 'shield-check');
+            showToast('All critical/high findings resolved — Apply Redactions enabled', 'check-circle-2');
         }
 
         function refreshPiiBadge() {
@@ -1366,18 +1405,30 @@
 
         function updatePiiEnforcementUI() {
             const gate = document.getElementById('piiEnforcementGate');
+            const gateFindings = document.getElementById('piiGateFindings');
             const applyBtn = document.getElementById('piiApplyRedactionsBtn');
-            const unresolved = getPiiUnresolved();
+            const unresolved = [...getPiiUnresolved()].sort(piiFindingSort);
             const blocked = piiExportBlocked();
 
             if (applyBtn) {
                 applyBtn.disabled = unresolved.length > 0 && !piiExportOverride;
+                applyBtn.title = unresolved.length > 0 && !piiExportOverride
+                    ? 'Resolve ' + unresolved.length + ' critical/high finding(s) to enable redaction'
+                    : 'Apply redactions to the stored corpus text';
+                if (!piiConfirmingApply) {
+                    applyBtn.textContent = unresolved.length > 0 && !piiExportOverride
+                        ? 'Apply Redactions to Corpus — ' + unresolved.length + ' pending'
+                        : 'Apply Redactions to Corpus';
+                }
             }
 
             if (!gate) return;
             if (unresolved.length > 0) {
                 gate.classList.remove('hidden');
                 piiSet('piiGateMessage', unresolved.length + ' critical/high finding(s) await review — plaintext export and redaction are blocked.');
+                if (gateFindings) {
+                    gateFindings.innerHTML = unresolved.map(f => `<button type="button" onclick="piiHighlightFindingRow('${f.id}')" class="px-2 py-1 rounded-md bg-amber-600/15 hover:bg-amber-600/25 border border-amber-500/35 text-amber-100 text-[10px] font-mono cursor-pointer">${piiEsc(f.type)} · ${piiEsc(f.masked)}</button>`).join('');
+                }
                 const chk = document.getElementById('piiGateOverrideChk');
                 const btn = document.getElementById('piiGateOverrideBtn');
                 piiSet('piiGateOverrideCount', unresolved.length);
@@ -1391,6 +1442,7 @@
                 }
             } else {
                 gate.classList.add('hidden');
+                if (gateFindings) gateFindings.innerHTML = '';
             }
         }
 
@@ -1404,6 +1456,7 @@
         async function updateFindingAction(id, action) {
             const f = pbgcPiiFindings.find(x => x.id === id);
             if (!f) return;
+            const wasUnresolved = getPiiUnresolved().length;
             if (action === 'pending') {
                 f.action = 'retain';
                 f.status = 'pending';
@@ -1417,10 +1470,14 @@
             renderPiiStats();
             renderPiiFindingsTable(null);
             updatePiiEnforcementUI();
+            const nowUnresolved = getPiiUnresolved().length;
             if (action === 'pending') {
                 showToast('Finding returned to Pending review', 'undo-2');
+                piiFocusFirstUnresolvedFinding();
+            } else if (wasUnresolved > 0 && nowUnresolved === 0) {
+                showToast('All critical/high findings resolved — Apply Redactions enabled', 'check-circle-2');
             } else {
-                showToast('Finding marked "' + action.replace(/_/g, ' ') + '" — logged at ' + new Date(f.resolvedAt).toLocaleTimeString(), 'shield-check');
+                showToast('Finding marked "' + action.replace(/_/g, ' ') + '" — ' + nowUnresolved + ' critical/high finding(s) still pending', 'shield-check');
             }
         }
 
@@ -1510,7 +1567,7 @@
             const applyBtn = document.getElementById('piiApplyRedactionsBtn');
             if (!applyBtn) return;
             applyBtn.classList.remove('bg-red-700', 'ring-2', 'ring-red-400', 'ring-offset-2', 'ring-offset-slate-950');
-            applyBtn.textContent = 'Apply Redactions to Corpus';
+            updatePiiEnforcementUI();
         }
 
         function buildPiiComplianceReport() {
