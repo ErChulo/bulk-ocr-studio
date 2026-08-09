@@ -663,6 +663,31 @@
 
     <!-- Application Script Logic -->
     <script>
+        // Global error visibility: surface silent failures instead of dead UI
+        window.addEventListener('error', function (evt) {
+            if (evt.target && evt.target !== window) return; // resource load errors (e.g. missing favicon)
+            try {
+                const msg = (evt && evt.error && (evt.error.message || evt.error)) || (evt && evt.message) || 'Unknown script error';
+                console.error('[Global handler]', evt.error || msg);
+                if (typeof showToast === 'function') {
+                    showToast('Script error: ' + String(msg).slice(0, 180), 'alert-circle');
+                }
+            } catch (e) { /* never recurse */ }
+        }, true);
+
+        // Init self-check: if the PII detector functions failed to load, say so visibly
+        window.addEventListener('DOMContentLoaded', function () {
+            try {
+                const missing = [];
+                ['openPbgcPiiModal', 'runPbgcPiiScan', 'scanPbgcCorpus', 'refreshPiiBadge'].forEach(fn => {
+                    if (typeof window[fn] !== 'function') missing.push(fn);
+                });
+                if (missing.length && typeof showToast === 'function') {
+                    showToast('PII detector failed to initialize: missing ' + missing.join(', '), 'alert-circle');
+                }
+            } catch (e) { /* never recurse */ }
+        });
+
         // Delayed Spinner Management
         let spinnerTimeout = null;
         function showLoadingSpinner(title = 'Processing...', subtitle = 'Please wait while we parse documents and prepare items.') {
